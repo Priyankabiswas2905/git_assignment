@@ -1,17 +1,15 @@
-import java.net.{ConnectException, Socket}
+import java.util.UUID
 
+import Auth.{AuthorizeToken, AuthorizeUserPassword}
 import com.twitter.conversions.time._
 import com.twitter.finagle.http._
 import com.twitter.finagle.http.path._
 import com.twitter.finagle.http.service.RoutingService
-import com.twitter.finagle.{Http, http, Service, SimpleFilter}
-import com.twitter.logging.{Formatter, Logger}
+import com.twitter.finagle.{Http, Service, SimpleFilter, http}
 import com.twitter.server.TwitterServer
 import com.twitter.util._
-import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
-
 import com.typesafe.config.ConfigFactory
-
+import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 
 class TimeoutFilter[Req, Rep](timeout: Duration, timer: Timer)
   extends SimpleFilter[Req, Rep] {
@@ -39,18 +37,6 @@ class HandleExceptions extends SimpleFilter[Request, Response] {
   }
 }
 
-class Authorize extends SimpleFilter[Request, Response] {
-  def apply(request: Request, continue: Service[Request, Response]) = {
-    if (Some("open sesame") == request.headerMap.get(Fields.Authorization)) {
-      continue(request)
-    } else {
-      //        Future.exception(new IllegalArgumentException("You don't know the secret"))
-      val errorResponse = Response(Version.Http11, Status.Forbidden)
-      errorResponse.contentString = "You don't know the secret"
-      Future(errorResponse)
-    }
-  }
-}
 
 //  val client = Http.newClient("localhost:10000,localhost:10001","cookies")
 //  val proxyService = new Service[Request, Response] {
@@ -61,16 +47,6 @@ object Proxy extends TwitterServer {
 
   private val conf = ConfigFactory.load()
 
-  private[this] def assertRedisRunning() {
-    try {
-      new Socket("localhost", 6379)
-    } catch {
-      case e: ConnectException =>
-        println("Error: redis must be running on port 6379")
-        System.exit(1)
-    }
-  }
-
   val dap: Service[Request, Response] = Http.newService(conf.getString("dap.url"))
 
   val dts: Service[Request, Response] = Http.newService(conf.getString("dts.url"))
@@ -79,15 +55,21 @@ object Proxy extends TwitterServer {
 
   val handleExceptions = new HandleExceptions
 
-  val authorize = new Authorize
+  val authToken = new AuthorizeToken
+
+  val authUserPass = new AuthorizeUserPassword
 
   val timeoutFilter = new TimeoutFilter[HttpRequest, HttpResponse](4.nanoseconds, Timer.Nil)
 
-  val authorizedGoogle = authorize andThen google
+  val authorizedGoogle = authToken andThen google
 
-  val authorizedDAP = authorize andThen dap
+  val authorizedDAP = authToken andThen dap
 
   val okStats = statsReceiver.counter("everything-is-ok")
+
+  val dapStats = statsReceiver.counter("dap-requests")
+
+  val dtsStats = statsReceiver.counter("dts-requests")
 
   val ok = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
@@ -119,6 +101,7 @@ object Proxy extends TwitterServer {
 
   def dapPath(path: Path) = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
+      dapStats.incr()
       val dapReq = Request(req.method, path.toString)
       val user = conf.getString("dap.user")
       val password = conf.getString("dap.password")
@@ -130,6 +113,7 @@ object Proxy extends TwitterServer {
 
   def dtsPath(path: Path) = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
+      dtsStats.incr()
       val dtsReq = Request(req.method, path.toString)
       val user = conf.getString("dts.user")
       val password = conf.getString("dts.password")
@@ -144,15 +128,21 @@ object Proxy extends TwitterServer {
     case Root / "echo" / message => echoService(message)
     case Root / "google" => authorizedGoogle
     case Root / "dap" / "alive" => dapPath(Path("alive"))
-    case "dap" /: path => authorize andThen dapPath(path)
-    case "dts" /: path => authorize andThen dtsPath(path)
+    case "dap" /: path => authToken andThen dapPath(path)
+    case "dts" /: path => authToken andThen dtsPath(path)
     case Root / "ok" => ok
+    case Root / "key" / key / "token" => authUserPass andThen Auth.newAccessToken(UUID.fromString(key))
+    case Root / "token" / token => authUserPass andThen Auth.checkToken(UUID.fromString(token))
   }
 
   def main(): Unit = {
     //  assertRedisRunning()
-    val server =  Http.serve(":8080", router)
-    onExit { server.close() }
+    val server = Http.serve(":8080", router)
+    onExit {
+      log.info("Closing server...")
+      server.close()
+      Redis.close()
+    }
     Await.ready(server)
   }
 }
