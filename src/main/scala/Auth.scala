@@ -1,6 +1,6 @@
 import java.util.UUID
 
-import Proxy._
+import Server._
 import com.twitter.finagle.http._
 import com.twitter.finagle.{SimpleFilter, http, Service}
 import com.twitter.io.Buf
@@ -48,19 +48,26 @@ object Auth {
   class AuthorizeToken extends SimpleFilter[Request, Response] {
     def apply(request: Request, continue: Service[Request, Response]) = {
       // validate token
-      val active: Option[Boolean] = for {
-        token <- request.headerMap.get(Fields.Authorization)
-        ttl <- Redis.checkToken(UUID.fromString(token))
-        if ttl > 0
-      } yield true
-      // forward if valid
-      if (active.getOrElse(false)) {
-        continue(request)
-      } else {
-        //        Future.exception(new IllegalArgumentException("You don't know the secret"))
-        val errorResponse = Response(Version.Http11, Status.Forbidden)
-        errorResponse.contentString = "Invalid token"
-        Future(errorResponse)
+      try {
+        val active: Option[Boolean] = for {
+          token <- request.headerMap.get(Fields.Authorization)
+          ttl <- Redis.checkToken(UUID.fromString(token))
+          if ttl > 0
+        } yield true
+        // forward if valid
+        if (active.getOrElse(false)) {
+          continue(request)
+        } else {
+          //        Future.exception(new IllegalArgumentException("You don't know the secret"))
+          val errorResponse = Response(Version.Http11, Status.Forbidden)
+          errorResponse.contentString = "Invalid token"
+          Future(errorResponse)
+        }
+      } catch {
+        case iae: IllegalArgumentException =>
+          val errorResponse = Response(Version.Http11, Status.Forbidden)
+          errorResponse.contentString = "Invalid token"
+          Future(errorResponse)
       }
     }
   }

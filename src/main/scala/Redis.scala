@@ -1,7 +1,7 @@
 import java.net.{ConnectException, Socket}
 import java.util.UUID
 
-import Proxy._
+import Server._
 import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Status, Response, Request}
 import com.twitter.finagle.redis.util.StringToChannelBuffer
@@ -26,8 +26,7 @@ object Redis {
   }
 
   def checkToken(token: UUID): Option[JLong] = {
-    val result = Await.result(redis.ttl(StringToChannelBuffer("token:"+token.toString)))
-    result
+    Await.result(redis.ttl(StringToChannelBuffer("token:"+token.toString)))
   }
 
   def close(): Unit = {
