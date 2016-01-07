@@ -110,7 +110,15 @@ object Server extends TwitterServer {
       val user = conf.getString("dap.user")
       val password = conf.getString("dap.password")
       val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
-      dapReq.headerMap.add(Fields.Authorization, "Basic " + encodedCredentials)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.debug(s"$key -> $value")
+          dapReq.headerMap.add(key, value)
+        }
+      }
+      dapReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
+      dapReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+//      dapReq.headerMap.set(Fields.Accept, "text/plain")
       log.debug("DAP session request: " + req)
       log.debug("DAP session request body: " + req.contentString)
       dap(dapReq)
@@ -124,7 +132,13 @@ object Server extends TwitterServer {
       val user = conf.getString("dts.user")
       val password = conf.getString("dts.password")
       val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
-      dtsReq.headerMap.add(Fields.Authorization, "Basic " + encodedCredentials)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.debug(s"$key -> $value")
+          dtsReq.headerMap.add(key, value)
+        }
+      }
+      dtsReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
       dts(dtsReq)
     }
   }
