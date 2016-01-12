@@ -2,10 +2,15 @@ import java.util.UUID
 
 import Auth.{AuthorizeToken, AuthorizeUserPassword}
 import com.twitter.conversions.time._
+import com.twitter.finagle.{ListeningServer, Service, SimpleFilter}
+import com.twitter.finagle.http.Method.Post
 import com.twitter.finagle.http._
+import com.twitter.finagle.http.Version.Http11
+import com.twitter.finagle.Http
+import com.twitter.finagle.http.path.Path
 import com.twitter.finagle.http.path._
 import com.twitter.finagle.http.service.RoutingService
-import com.twitter.finagle.{Http, Service, SimpleFilter, http}
+import com.twitter.io.Buf
 import com.twitter.server.TwitterServer
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
@@ -67,8 +72,8 @@ object Server extends TwitterServer {
 
   val dtsStats = statsReceiver.counter("dts-requests")
 
-  val ok = new Service[http.Request, http.Response] {
-    def apply(req: http.Request): Future[http.Response] = {
+  val ok = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
       val res = Response(req.version, Status.Ok)
       res.contentString = "Everything is O.K."
       okStats.incr()
@@ -76,8 +81,8 @@ object Server extends TwitterServer {
     }
   }
 
-  val notOk = new Service[http.Request, http.Response] {
-    def apply(req: http.Request): Future[http.Response] = {
+  val notOk = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
       val res = Response(req.version, Status.Ok)
       res.contentString = "Everything is NOT O.K."
       Future.value(res)
@@ -118,9 +123,7 @@ object Server extends TwitterServer {
       }
       dapReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
       dapReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
-//      dapReq.headerMap.set(Fields.Accept, "text/plain")
       log.debug("DAP session request: " + req)
-      log.debug("DAP session request body: " + req.contentString)
       dap(dapReq)
     }
   }
@@ -128,7 +131,7 @@ object Server extends TwitterServer {
   def dtsPath(path: Path) = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
       dtsStats.incr()
-      val dtsReq = Request(req.method, path.toString)
+      val dtsReq = Request(Http11, req.method, path.toString, req.reader)
       val user = conf.getString("dts.user")
       val password = conf.getString("dts.password")
       val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
@@ -139,27 +142,70 @@ object Server extends TwitterServer {
         }
       }
       dtsReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      log.debug("DTS: " + req)
+      log.debug("DTS multipart: " + req.multipart)
       dts(dtsReq)
     }
   }
 
-  val router = RoutingService.byPathObject[Request] {
-    case Root / "user" / Integer(id) => userService(id)
-    case Root / "echo" / message => echoService(message)
-    case Root / "google" => authorizedGoogle
-    case Root / "dap" / "alive" => dapPath(Path("alive"))
-    case "dap" /: path => authToken andThen dapPath(path)
-    case "dts" /: path => authToken andThen dtsPath(path)
-    case Root / "ok" => ok
-    case Root / "key" / key / "token" => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
-    case Root / "token" / token => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
-    case Root / "crowd" / "session" => Crowd.session()
-    case Root / "crowd" / "test" => crowdAuth andThen ok
-    case Root / "crowd" => Crowd.crowd
+  def streamingDTS(path: String): Service[Request, Response] = {
+    log.debug("Special upload endpoint")
+    Service.mk { (req: Request) =>
+      val newReq = Request(Http11, Post, path, req.reader)
+      val user = conf.getString("dts.user")
+      val password = conf.getString("dts.password")
+      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.debug(s"$key -> $value")
+          newReq.headerMap.add(key, value)
+        }
+      }
+      newReq.headerMap.set(Fields.Host, conf.getString("dts.url"))
+      newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      dts(newReq)
+    }
+  }
+
+  def streamingDAP(path: String): Service[Request, Response] = {
+    log.debug("Special upload endpoint")
+    Service.mk { (req: Request) =>
+      val newReq = Request(Http11, Post, path, req.reader)
+      val user = conf.getString("dap.user")
+      val password = conf.getString("dap.password")
+      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.debug(s"$key -> $value")
+          newReq.headerMap.add(key, value)
+        }
+      }
+      newReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
+      newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      dap(newReq)
+    }
+  }
+
+  val router = RoutingService.byMethodAndPathObject[Request] {
+    case (_, Root / "user" / Integer(id)) => userService(id)
+    case (_, Root / "echo" / message) => echoService(message)
+    case (_, Root / "google") => authorizedGoogle
+    case (_, Root / "dap" / "alive") => dapPath(Path("alive"))
+    case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
+    case (_, "dap" /: path) => authToken andThen dapPath(path)
+    case (Post, Root / "dts" / "api" / "files") => authToken andThen streamingDTS("/api/files")
+    case (_, "dts" /: path) => dtsPath(path)
+    case (_, Root / "ok") => ok
+    case (_, Root / "key" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
+    case (_, Root / "token" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (_, Root / "crowd" / "session") => Crowd.session()
+    case (_, Root / "crowd" / "test") => crowdAuth andThen ok
+    case (_, Root / "crowd") => Crowd.crowd
   }
 
   def main(): Unit = {
     val server = Http.serve(":8080", router)
+//    val server = Http.server.withStreaming(true).serve(":8080", router)
     onExit {
       log.info("Closing server...")
       server.close()
