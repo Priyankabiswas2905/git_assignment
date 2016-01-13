@@ -1,4 +1,4 @@
-name := """animal-kingdom"""
+name := """fence"""
 
 version := "0.1.0"
 

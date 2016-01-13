@@ -12,9 +12,9 @@ import com.twitter.util.{Base64StringEncoder, Future}
   */
 object Auth {
 
-  val accessTokenStats = statsReceiver.counter("animal-kingdom-new-access-token")
+  val accessTokenStats = statsReceiver.counter("fence-new-access-token")
 
-  val checkTokenStats = statsReceiver.counter("animal-kingdom-check-access-token")
+  val checkTokenStats = statsReceiver.counter("fence-check-access-token")
 
   def newAccessToken(key: UUID) = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
