@@ -1,3 +1,5 @@
+package edu.illinois.ncsa.fence
+
 import java.util.UUID
 
 /**

@@ -1,13 +1,12 @@
-import java.net.{ConnectException, Socket}
+package edu.illinois.ncsa.fence
+
+import _root_.java.lang.{Long => JLong}
 import java.util.UUID
 
-import Server._
-import com.twitter.finagle.Service
-import com.twitter.finagle.http.{Status, Response, Request}
 import com.twitter.finagle.redis.util.StringToChannelBuffer
-import com.twitter.util.{Await, Future}
+import com.twitter.util.Await
 import com.typesafe.config.ConfigFactory
-import _root_.java.lang.{Long => JLong}
+import edu.illinois.ncsa.fence.Server._
 
 /**
   * Client to redis.

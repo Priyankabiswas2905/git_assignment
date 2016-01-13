@@ -1,19 +1,19 @@
+package edu.illinois.ncsa.fence
+
 import java.util.UUID
 
-import Auth.{AuthorizeToken, AuthorizeUserPassword}
 import com.twitter.conversions.time._
-import com.twitter.finagle.{ListeningServer, Service, SimpleFilter}
 import com.twitter.finagle.http.Method.Post
-import com.twitter.finagle.http._
 import com.twitter.finagle.http.Version.Http11
-import com.twitter.finagle.Http
-import com.twitter.finagle.http.path.Path
-import com.twitter.finagle.http.path._
+import com.twitter.finagle.http._
+import com.twitter.finagle.http.path.{Path, _}
 import com.twitter.finagle.http.service.RoutingService
-import com.twitter.io.Buf
+import com.twitter.finagle.{Http, Service, SimpleFilter}
 import com.twitter.server.TwitterServer
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
+import edu.illinois.ncsa.fence.Auth.AuthorizeToken
+import edu.illinois.ncsa.fence.Crowd.AuthorizeUserPassword
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 
 class TimeoutFilter[Req, Rep](timeout: Duration, timer: Timer)
@@ -56,9 +56,7 @@ object Server extends TwitterServer {
 
   val authToken = new AuthorizeToken
 
-  val authUserPass = new AuthorizeUserPassword
-
-  val crowdAuth = new Crowd.AuthorizeUserPassword
+  val crowdAuth = new AuthorizeUserPassword
 
   val timeoutFilter = new TimeoutFilter[HttpRequest, HttpResponse](4.nanoseconds, Timer.Nil)
 
@@ -205,7 +203,6 @@ object Server extends TwitterServer {
 
   def main(): Unit = {
     val server = Http.serve(":8080", router)
-//    val server = Http.server.withStreaming(true).serve(":8080", router)
     onExit {
       log.info("Closing server...")
       server.close()

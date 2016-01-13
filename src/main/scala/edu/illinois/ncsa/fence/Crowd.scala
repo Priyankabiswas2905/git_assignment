@@ -1,8 +1,10 @@
-import Server._
+package edu.illinois.ncsa.fence
+
 import com.twitter.finagle.http._
 import com.twitter.finagle.{Http, Service, SimpleFilter}
 import com.twitter.util.{Await, Base64StringEncoder, Future}
 import com.typesafe.config.ConfigFactory
+import edu.illinois.ncsa.fence.Server._
 
 /**
   * Talk to Atlassian Crowd to authenticate users.

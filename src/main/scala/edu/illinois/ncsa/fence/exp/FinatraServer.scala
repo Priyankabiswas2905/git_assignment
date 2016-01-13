@@ -1,3 +1,5 @@
+package edu.illinois.ncsa.fence.exp
+
 import javax.inject.{Inject, Singleton}
 
 import com.fasterxml.jackson.databind.ObjectMapper

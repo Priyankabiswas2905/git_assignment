@@ -1,6 +1,7 @@
-import com.twitter.finagle.http.{Response, Request}
+package edu.illinois.ncsa.fence
 
-import Server._
+import com.twitter.finagle.http.{Request, Response}
+import edu.illinois.ncsa.fence.Server._
 
 /**
   * Logging utility methods.

@@ -1,11 +1,13 @@
+package edu.illinois.ncsa.fence
+
 import java.util.UUID
 
-import Server._
 import com.twitter.finagle.http._
-import com.twitter.finagle.{SimpleFilter, http, Service}
+import com.twitter.finagle.{Service, SimpleFilter, http}
 import com.twitter.io.Buf
 import com.twitter.server.util.JsonConverter
 import com.twitter.util.{Base64StringEncoder, Future}
+import edu.illinois.ncsa.fence.Server._
 
 /**
   * Authentication and authorization methods.
