@@ -162,18 +162,16 @@ object Server extends TwitterServer {
   }
 
   val router = RoutingService.byMethodAndPathObject[Request] {
-    case (_, Root / "dap" / "alive") => dapPath(Path("alive"))
+    case (Get, Root / "dap" / "alive") => dapPath(Path("alive"))
     case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => authToken andThen streamingDTS("/api/files")
     case (_, "dts" /: path) => dtsPath(path)
-    case (_, Root / "ok") => ok
+    case (Get, Root / "ok") => ok
     case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
-    case (_, Root / "keys" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
+    case (Post, Root / "keys" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
     case (Get, Root / "tokens" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
-    case (_, Root / "crowd" / "session") => Crowd.session()
-    case (_, Root / "crowd" / "test") => crowdAuth andThen ok
-    case (_, Root / "crowd") => Crowd.crowd
+    case (Get, Root / "crowd" / "session") => Crowd.session()
   }
 
   def main(): Unit = {
