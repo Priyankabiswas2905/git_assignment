@@ -170,7 +170,7 @@ object Server extends TwitterServer {
     case (_, Root / "ok") => ok
     case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
     case (_, Root / "keys" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
-    case (_, Root / "tokens" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (Get, Root / "tokens" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
     case (_, Root / "crowd" / "session") => Crowd.session()
     case (_, Root / "crowd" / "test") => crowdAuth andThen ok
     case (_, Root / "crowd") => Crowd.crowd

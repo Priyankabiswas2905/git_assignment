@@ -44,8 +44,13 @@ object Auth {
       val res = Response(req.version, Status.Ok)
       res.contentType = "application/json;charset=UTF-8"
       Redis.checkToken(token) match {
-        case Some(ttl) => res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"true","ttl"->ttl)))
-        case None => res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"false")))
+        case Some(ttl) =>
+          if (ttl == -2)
+            res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"false")))
+          else
+            res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"true","ttl"->ttl)))
+        case None =>
+          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"false")))
       }
       checkTokenStats.incr()
       Future.value(res)
