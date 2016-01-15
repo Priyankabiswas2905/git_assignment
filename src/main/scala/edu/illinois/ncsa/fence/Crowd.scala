@@ -71,7 +71,6 @@ object Crowd {
       val crowdUsername = conf.getString("crowd.user")
       val crowdPassword = conf.getString("crowd.password")
       val encodedCredentials = Base64StringEncoder.encode(s"$crowdUsername:$crowdPassword".getBytes)
-      log.debug("Crowd encoded credentials: " + encodedCredentials)
       req.headerMap.add(Fields.Authorization, "Basic " + encodedCredentials)
       val body =
         <authentication-context>

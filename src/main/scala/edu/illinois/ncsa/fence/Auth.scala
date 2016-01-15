@@ -57,6 +57,19 @@ object Auth {
     }
   }
 
+  def deleteToken(token: UUID) = new Service[http.Request, http.Response] {
+    def apply(req: http.Request): Future[http.Response] = {
+      val res = Response(req.version, Status.Ok)
+      res.contentType = "application/json;charset=UTF-8"
+      val numDel = Redis.deleteToken(token)
+      if (numDel == 1)
+        res.content = Buf.Utf8(JsonConverter.writeToString(Map("status"->"deleted")))
+      else
+        res.content = Buf.Utf8(JsonConverter.writeToString(Map("status"->"error", "num_del"->numDel)))
+      Future.value(res)
+    }
+  }
+
   def createApiKey() = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
       BasicAuth.extractCredentials(req) match {

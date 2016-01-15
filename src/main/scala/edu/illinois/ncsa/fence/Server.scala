@@ -3,7 +3,7 @@ package edu.illinois.ncsa.fence
 import java.util.UUID
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.http.Method.{Get, Post}
+import com.twitter.finagle.http.Method.{Delete, Get, Post}
 import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http._
 import com.twitter.finagle.http.path.{Path, _}
@@ -171,6 +171,7 @@ object Server extends TwitterServer {
     case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
     case (Post, Root / "keys" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
     case (Get, Root / "tokens" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (Delete, Root / "tokens" / token) => crowdAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => Crowd.session()
   }
 

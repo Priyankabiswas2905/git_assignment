@@ -34,6 +34,10 @@ object Redis {
     Await.result(redis.ttl(StringToChannelBuffer(tokenNamespace+token.toString)))
   }
 
+  def deleteToken(token: UUID): java.lang.Long = {
+    Await.result(redis.del(Seq(StringToChannelBuffer(tokenNamespace+token.toString))))
+  }
+
   def createApiKey(userId: String): UUID = {
     val apiKey = Key.newKey()
     // key -> username
