@@ -50,8 +50,6 @@ object Server extends TwitterServer {
 
   val dts: Service[Request, Response] = Http.newService(conf.getString("dts.url"))
 
-  val google: Service[Request, Response] = Http.newService("www.google.com:80")
-
   val handleExceptions = new HandleExceptions
 
   val authToken = new AuthorizeToken
@@ -59,8 +57,6 @@ object Server extends TwitterServer {
   val crowdAuth = new AuthorizeUserPassword
 
   val timeoutFilter = new TimeoutFilter[HttpRequest, HttpResponse](4.nanoseconds, Timer.Nil)
-
-  val authorizedGoogle = authToken andThen google
 
   val authorizedDAP = authToken andThen dap
 
@@ -84,25 +80,6 @@ object Server extends TwitterServer {
       val res = Response(req.version, Status.Ok)
       res.contentString = "Everything is NOT O.K."
       Future.value(res)
-    }
-  }
-
-  def echoService(message: String) = new Service[Request, Response] {
-    def apply(req: Request): Future[Response] = {
-      val rep = Response(req.version, Status.Ok)
-      rep.setContentString(message)
-      Future(rep)
-    }
-  }
-
-  def userService(id: Int) = new Service[Request, Response] {
-    def apply(req: Request): Future[Response] = {
-      val rep = Response(Version.Http11, Status.Ok)
-      import scala.util.parsing.json.JSONObject
-      val o = JSONObject(Map("id" -> id, "name" -> "John Smith"))
-      rep.setContentTypeJson()
-      rep.setContentString(o.toString)
-      Future(rep)
     }
   }
 
@@ -185,9 +162,6 @@ object Server extends TwitterServer {
   }
 
   val router = RoutingService.byMethodAndPathObject[Request] {
-    case (_, Root / "user" / Integer(id)) => userService(id)
-    case (_, Root / "echo" / message) => echoService(message)
-    case (_, Root / "google") => authorizedGoogle
     case (_, Root / "dap" / "alive") => dapPath(Path("alive"))
     case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => authToken andThen dapPath(path)
@@ -196,7 +170,7 @@ object Server extends TwitterServer {
     case (_, Root / "ok") => ok
     case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
     case (_, Root / "keys" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
-    case (_, Root / "token" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (_, Root / "tokens" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
     case (_, Root / "crowd" / "session") => Crowd.session()
     case (_, Root / "crowd" / "test") => crowdAuth andThen ok
     case (_, Root / "crowd") => Crowd.crowd

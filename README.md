@@ -5,11 +5,12 @@ API Gateway for Brown Dog Services
 
 1. Make sure you have Java 1.8 and sbt installed
 2. Create an *application.conf* file under *src/main/resources*. You can use *reference.conf* as an example.
-3. Run `sbt "run-main Proxy -log.level=DEBUG"`
+3. Run `sbt "run-main edu.illinois.ncsa.fence.Server -log.level=DEBUG"`
 
 Sample endpoints
 ----------------
-- http://localhost:8080/key/8d4a0237-c754-4361-b361-23d6bee5fdb4/token (with username/password credentials)
+- POST http://localhost:8080/keys (with username/password credentials)
+- POST http://localhost:8080/keys/8d4a0237-c754-4361-b361-23d6bee5fdb4/token (with username/password credentials)
 - http://localhost:8080/token/8d4a0237-c754-4361-b361-23d6bee5fdb4 (with username/password credentials)
 - http://localhost:8080/ok
 - http://localhost:8080/dap/alive
