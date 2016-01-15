@@ -9,6 +9,8 @@ import com.twitter.server.util.JsonConverter
 import com.twitter.util.{Base64StringEncoder, Future}
 import edu.illinois.ncsa.fence.Server._
 
+import scala.util.{Success, Failure}
+
 /**
   * Authentication and authorization methods.
   */
@@ -20,12 +22,20 @@ object Auth {
 
   def newAccessToken(key: UUID) = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
-      val token = Redis.newToken(key)
-      val res = Response(req.version, Status.Ok)
-      res.contentType = "application/json;charset=UTF-8"
-      res.content = Buf.Utf8(JsonConverter.writeToString(Map("token"->token)))
-      accessTokenStats.incr()
-      Future.value(res)
+      Redis.getAPIKey(key.toString) match {
+        case Success(username) =>
+          val token = Redis.createToken(key)
+          val res = Response(req.version, Status.Ok)
+          res.contentType = "application/json;charset=UTF-8"
+          res.content = Buf.Utf8(JsonConverter.writeToString(Map("token"->token)))
+          accessTokenStats.incr()
+          Future.value(res)
+        case Failure(ex) =>
+          val res = Response(req.version, Status.NotFound)
+          res.contentType = "application/json;charset=UTF-8"
+          res.content = Buf.Utf8(JsonConverter.writeToString(Map("error"->"API key not found")))
+          Future.value(res)
+      }
     }
   }
 
@@ -38,6 +48,35 @@ object Auth {
         case None => res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"false")))
       }
       checkTokenStats.incr()
+      Future.value(res)
+    }
+  }
+
+  def createApiKey() = new Service[http.Request, http.Response] {
+    def apply(req: http.Request): Future[http.Response] = {
+      BasicAuth.extractCredentials(req) match {
+        case Some(cred) =>
+          val apiKey = Redis.createApiKey(cred.username)
+          val res = Response(req.version, Status.Ok)
+          res.contentType = "application/json;charset=UTF-8"
+          res.content = Buf.Utf8(JsonConverter.writeToString(Map("api-key"->apiKey)))
+          Future.value(res)
+        case None =>
+          val res = Response(req.version, Status.NotFound)
+          res.contentType = "application/json;charset=UTF-8"
+          res.content = Buf.Utf8(JsonConverter.writeToString(Map("error"->"Username not found")))
+          Future.value(res)
+      }
+    }
+  }
+
+  def deleteApiKey() = new Service[http.Request, http.Response] {
+    def apply(req: http.Request): Future[http.Response] = {
+      val username = "test@example.com"
+      val apiKey = Redis.createApiKey(username)
+      val res = Response(req.version, Status.Ok)
+      res.contentType = "application/json;charset=UTF-8"
+      res.content = Buf.Utf8(JsonConverter.writeToString(Map("api-key"->apiKey)))
       Future.value(res)
     }
   }

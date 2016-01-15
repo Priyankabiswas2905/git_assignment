@@ -3,7 +3,7 @@ package edu.illinois.ncsa.fence
 import java.util.UUID
 
 import com.twitter.conversions.time._
-import com.twitter.finagle.http.Method.Post
+import com.twitter.finagle.http.Method.{Get, Post}
 import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http._
 import com.twitter.finagle.http.path.{Path, _}
@@ -194,7 +194,8 @@ object Server extends TwitterServer {
     case (Post, Root / "dts" / "api" / "files") => authToken andThen streamingDTS("/api/files")
     case (_, "dts" /: path) => dtsPath(path)
     case (_, Root / "ok") => ok
-    case (_, Root / "key" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
+    case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
+    case (_, Root / "keys" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
     case (_, Root / "token" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
     case (_, Root / "crowd" / "session") => Crowd.session()
     case (_, Root / "crowd" / "test") => crowdAuth andThen ok
