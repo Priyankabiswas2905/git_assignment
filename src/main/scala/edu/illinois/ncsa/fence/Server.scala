@@ -8,7 +8,7 @@ import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http._
 import com.twitter.finagle.http.path.{Path, _}
 import com.twitter.finagle.http.service.RoutingService
-import com.twitter.finagle.{Http, Service, SimpleFilter}
+import com.twitter.finagle.{ListeningServer, Http, Service, SimpleFilter}
 import com.twitter.server.TwitterServer
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
@@ -185,8 +185,19 @@ object Server extends TwitterServer {
     case _ => notFound
   }
 
-  def main(): Unit = {
+  def start(): ListeningServer = {
     val server = Http.serve(":8080", router)
+    onExit {
+      log.info("Closing server...")
+      server.close()
+      Redis.close()
+    }
+    server
+  }
+
+  def main(): Unit = {
+    log.info("Starting server...")
+    val server = start()
     onExit {
       log.info("Closing server...")
       server.close()
