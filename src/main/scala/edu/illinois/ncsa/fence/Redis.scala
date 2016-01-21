@@ -26,7 +26,10 @@ object Redis {
   def createToken(key: UUID): UUID = {
     val token = Token.newToken()
     val ttl = conf.getLong("token.ttl")
+    // token => key
     redis.setEx(StringToChannelBuffer(tokenNamespace+token.toString), ttl, StringToChannelBuffer(key.toString))
+    // key => tokens
+    redis.sAdd(StringToChannelBuffer(apiKeyNamespace+key+":tokens"), List(StringToChannelBuffer(token.toString)))
     token
   }
 
@@ -34,17 +37,65 @@ object Redis {
     Await.result(redis.ttl(StringToChannelBuffer(tokenNamespace+token.toString)))
   }
 
-  def deleteToken(token: UUID): java.lang.Long = {
-    Await.result(redis.del(Seq(StringToChannelBuffer(tokenNamespace+token.toString))))
+  def deleteToken(token: UUID): Boolean = {
+    // find key for token
+    val maybeKey = redis.get(StringToChannelBuffer(tokenNamespace+token.toString))
+    maybeKey.flatMap{someKey =>
+      someKey match {
+        case Some(k) =>
+          val key = BytesToString(k.array())
+          log.debug(s"Found key $key when deleting token $token")
+          // if key was found delete token from key => token set
+          redis.sRem(StringToChannelBuffer(apiKeyNamespace+key+":tokens"),
+            List(StringToChannelBuffer(token.toString)))
+          // delete token
+          redis.del(Seq(StringToChannelBuffer(tokenNamespace+token.toString)))
+          return true
+        case None =>
+          return false
+      }
+    }
+    // FIXME return based on above
+    return true
   }
 
   def createApiKey(userId: String): UUID = {
     val apiKey = Key.newKey()
-    // key -> username
+    // key => username
     redis.set(StringToChannelBuffer(apiKeyNamespace+apiKey), StringToChannelBuffer(userId))
-    // username -> keys
+    // username => keys
     redis.sAdd(StringToChannelBuffer(userNamespace+userId+":keys"), List(StringToChannelBuffer(apiKey.toString)))
     apiKey
+  }
+
+  def deleteApiKey(key: String): Unit = {
+    // get tokens by key
+    val tokens = redis.sMembers(StringToChannelBuffer(apiKeyNamespace + key + ":tokens"))
+    tokens.flatMap { allTokens =>
+      for (t <- allTokens) {
+        log.debug("Deleting token " + t)
+        // delete token
+        val token = BytesToString(t.array())
+        redis.del(Seq(StringToChannelBuffer(tokenNamespace + token)))
+      }
+      return
+    }
+    val maybeUser = redis.get(StringToChannelBuffer(apiKeyNamespace + key))
+    maybeUser.flatMap { user =>
+      user match {
+        case Some(userId) =>
+          val id = BytesToString(userId.array())
+          // remove key from user
+          redis.sRem(StringToChannelBuffer(userNamespace + id + ":keys"),
+            List(StringToChannelBuffer(key)))
+          // delete key
+          redis.del(Seq(StringToChannelBuffer(apiKeyNamespace + key)))
+          redis.del(Seq(StringToChannelBuffer(apiKeyNamespace + key + ":tokens")))
+        case None =>
+          log.error(s"Key $key not found when trying to delete it")
+      }
+      return
+    }
   }
 
   def getAPIKey(apiKey: String): Try[String] = {

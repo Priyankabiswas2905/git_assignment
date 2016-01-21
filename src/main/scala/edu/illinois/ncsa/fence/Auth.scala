@@ -61,11 +61,11 @@ object Auth {
     def apply(req: http.Request): Future[http.Response] = {
       val res = Response(req.version, Status.Ok)
       res.contentType = "application/json;charset=UTF-8"
-      val numDel = Redis.deleteToken(token)
-      if (numDel == 1)
+      val success = Redis.deleteToken(token)
+      if (success)
         res.content = Buf.Utf8(JsonConverter.writeToString(Map("status"->"deleted")))
       else
-        res.content = Buf.Utf8(JsonConverter.writeToString(Map("status"->"error", "num_del"->numDel)))
+        res.content = Buf.Utf8(JsonConverter.writeToString(Map("status"->"error")))
       Future.value(res)
     }
   }
@@ -88,13 +88,13 @@ object Auth {
     }
   }
 
-  def deleteApiKey() = new Service[http.Request, http.Response] {
+  def deleteApiKey(key: String) = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
-      val username = "test@example.com"
-      val apiKey = Redis.createApiKey(username)
+      log.debug("Deleting api key")
+      Redis.deleteApiKey(key)
       val res = Response(req.version, Status.Ok)
       res.contentType = "application/json;charset=UTF-8"
-      res.content = Buf.Utf8(JsonConverter.writeToString(Map("api-key"->apiKey)))
+      res.content = Buf.Utf8(JsonConverter.writeToString(Map("status"->"success")))
       Future.value(res)
     }
   }

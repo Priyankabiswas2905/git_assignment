@@ -83,6 +83,14 @@ object Server extends TwitterServer {
     }
   }
 
+  val notFound = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
+      val res = Response(req.version, Status.NotFound)
+      res.contentString = "Route not found"
+      Future.value(res)
+    }
+  }
+
   def dapPath(path: Path) = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
       dapStats.incr()
@@ -162,17 +170,19 @@ object Server extends TwitterServer {
   }
 
   val router = RoutingService.byMethodAndPathObject[Request] {
-    case (Get, Root / "dap" / "alive") => dapPath(Path("alive"))
+    case (Get, Root / "dap" / "alive") => authToken andThen dapPath(Path("alive"))
     case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => authToken andThen streamingDTS("/api/files")
-    case (_, "dts" /: path) => dtsPath(path)
+    case (_, "dts" /: path) => authToken andThen dtsPath(path)
     case (Get, Root / "ok") => ok
     case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
-    case (Post, Root / "keys" / key / "token") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
+    case (Delete, Root / "keys" / key) => crowdAuth andThen Auth.deleteApiKey(key)
+    case (Post, Root / "keys" / key / "tokens") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
     case (Get, Root / "tokens" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => crowdAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => Crowd.session()
+    case _ => notFound
   }
 
   def main(): Unit = {
