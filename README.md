@@ -7,6 +7,10 @@ API Gateway for Brown Dog Services
 2. Create an *application.conf* file under *src/main/resources*. You can use *reference.conf* as an example.
 3. Run `sbt "run-main edu.illinois.ncsa.fence.Server -log.level=DEBUG"`
 
+To build and run fat jar do steps 1 and 2 and then:
+4. sbt assembly
+5. java -jar target/scala-2.11/fence-assembly-0.1.0.jar
+
 Sample endpoints
 ----------------
 - POST http://localhost:8080/keys (with username/password credentials)

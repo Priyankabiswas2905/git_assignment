@@ -4,6 +4,8 @@ version := "0.1.0"
 
 scalaVersion := "2.11.7"
 
+mainClass in assembly := Some("edu.illinois.ncsa.fence.Server")
+
 lazy val versions = new {
   val finatra = "2.1.2"
   val guice = "4.0"
@@ -25,11 +27,11 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "twitter-server" % "1.16.0",
   "com.typesafe" % "config" % "1.3.0",
 
-  "com.twitter.finatra" %% "finatra-http" % versions.finatra,
-  "com.twitter.finatra" %% "finatra-httpclient" % versions.finatra,
-  "com.twitter.finatra" %% "finatra-slf4j" % versions.finatra,
-  "com.twitter.inject" %% "inject-core" % versions.finatra,
-  "ch.qos.logback" % "logback-classic" % versions.logback,
+  "com.twitter.finatra" %% "finatra-http" % versions.finatra % "provided",
+  "com.twitter.finatra" %% "finatra-httpclient" % versions.finatra % "provided",
+  "com.twitter.finatra" %% "finatra-slf4j" % versions.finatra % "provided",
+  "com.twitter.inject" %% "inject-core" % versions.finatra % "provided",
+  "ch.qos.logback" % "logback-classic" % versions.logback % "provided",
 
   "com.twitter.finatra" %% "finatra-http" % versions.finatra % "test",
   "com.twitter.finatra" %% "finatra-jackson" % versions.finatra % "test",
