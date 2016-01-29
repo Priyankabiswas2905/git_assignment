@@ -10,7 +10,12 @@ lazy val versions = new {
   val finatra = "2.1.2"
   val guice = "4.0"
   val logback = "1.0.13"
+  val jvm = "1.7"
 }
+
+scalacOptions ++= Seq("-target:jvm-" + versions.jvm, "-feature")
+
+javacOptions ++= Seq("-source", versions.jvm, "-target", versions.jvm)
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
@@ -25,7 +30,7 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "finagle-stats" % "6.31.0",
   "com.twitter" %% "finagle-redis" % "6.31.0",
   "com.twitter" %% "twitter-server" % "1.16.0",
-  "com.typesafe" % "config" % "1.3.0",
+  "com.typesafe" % "config" % "1.2.1",
 
   "com.twitter.finatra" %% "finatra-http" % versions.finatra % "provided",
   "com.twitter.finatra" %% "finatra-httpclient" % versions.finatra % "provided",
