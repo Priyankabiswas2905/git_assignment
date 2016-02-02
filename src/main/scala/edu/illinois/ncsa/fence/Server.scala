@@ -8,6 +8,7 @@ import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http._
 import com.twitter.finagle.http.path.{Path, _}
 import com.twitter.finagle.http.service.RoutingService
+import com.twitter.finagle.service.TimeoutFilter
 import com.twitter.finagle.{ListeningServer, Http, Service, SimpleFilter}
 import com.twitter.server.TwitterServer
 import com.twitter.util._
@@ -15,14 +16,6 @@ import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Auth.AuthorizeToken
 import edu.illinois.ncsa.fence.Crowd.AuthorizeUserPassword
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
-
-class TimeoutFilter[Req, Rep](timeout: Duration, timer: Timer)
-  extends SimpleFilter[Req, Rep] {
-  def apply(request: Req, service: Service[Req, Rep]): Future[Rep] = {
-    val res = service(request)
-    res.within(timer, timeout)
-  }
-}
 
 class HandleExceptions extends SimpleFilter[Request, Response] {
   def apply(request: Request, service: Service[Request, Response]) = {
@@ -56,7 +49,7 @@ object Server extends TwitterServer {
 
   val crowdAuth = new AuthorizeUserPassword
 
-  val timeoutFilter = new TimeoutFilter[HttpRequest, HttpResponse](4.nanoseconds, Timer.Nil)
+//  val timeoutFilter = new TimeoutFilter[Request, Response](5.seconds, new JavaTimer())
 
   val authorizedDAP = authToken andThen dap
 
