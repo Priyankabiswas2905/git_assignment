@@ -43,17 +43,35 @@ object Auth {
     def apply(req: http.Request): Future[http.Response] = {
       val res = Response(req.version, Status.Ok)
       res.contentType = "application/json;charset=UTF-8"
-      Redis.checkToken(token) match {
-        case Some(ttl) =>
-          if (ttl == -2)
-            res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"false")))
-          else
-            res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"true","ttl"->ttl)))
-        case None =>
-          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found"->"false")))
+
+      Redis.checkToken(token) flatMap { someTtl =>
+        someTtl match {
+          case Some(ttl) =>
+            if (ttl == -2)
+              res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "false")))
+            else
+              res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "true", "ttl" -> ttl)))
+            checkTokenStats.incr()
+            Future.value(res)
+          case None =>
+            res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "false")))
+            checkTokenStats.incr()
+            Future.value(res)
+        }
+
+
       }
-      checkTokenStats.incr()
-      Future.value(res)
+
+//        case Future(Some(ttl)) =>
+//        if (ttl == -2)
+//          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "false")))
+//        else
+//          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "true", "ttl" -> ttl)))
+//        case None =>
+//          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "false")))
+//      }
+//      checkTokenStats.incr()
+//      Future.value(res)
     }
   }
 
@@ -107,23 +125,25 @@ object Auth {
   class AuthorizeToken extends SimpleFilter[Request, Response] {
     def apply(request: Request, continue: Service[Request, Response]) = {
       // validate token
-      try {
-        val active: Option[Boolean] = for {
-          token <- request.headerMap.get(Fields.Authorization)
-          ttl <- Redis.checkToken(UUID.fromString(token))
-          if ttl > 0
-        } yield true
-        // forward if valid
-        if (active.getOrElse(false)) {
-          continue(request)
-        } else {
-          //        Future.exception(new IllegalArgumentException("You don't know the secret"))
-          val errorResponse = Response(Version.Http11, Status.Forbidden)
-          errorResponse.contentString = "Invalid token"
-          Future(errorResponse)
-        }
-      } catch {
-        case iae: IllegalArgumentException =>
+      request.headerMap.get(Fields.Authorization) match {
+        case Some(token) =>
+          Redis.checkToken(UUID.fromString(token)) flatMap { someTtl =>
+            someTtl match {
+              case Some(ttl) =>
+                if (ttl > 0) {
+                  continue(request)
+                } else {
+                  val errorResponse = Response(Version.Http11, Status.Forbidden)
+                  errorResponse.contentString = "Invalid token"
+                  Future(errorResponse)
+                }
+              case None =>
+                val errorResponse = Response(Version.Http11, Status.Forbidden)
+                errorResponse.contentString = "Invalid token"
+                Future(errorResponse)
+            }
+          }
+        case None =>
           val errorResponse = Response(Version.Http11, Status.Forbidden)
           errorResponse.contentString = "Invalid token"
           Future(errorResponse)

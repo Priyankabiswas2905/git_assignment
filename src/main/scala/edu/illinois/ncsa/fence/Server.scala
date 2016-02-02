@@ -107,7 +107,7 @@ object Server extends TwitterServer {
   def dtsPath(path: Path) = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
       dtsStats.incr()
-      val dtsReq = Request(Http11, req.method, path.toString, req.reader)
+      val dtsReq = Request(req.method, path.toString)
       val user = conf.getString("dts.user")
       val password = conf.getString("dts.password")
       val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)

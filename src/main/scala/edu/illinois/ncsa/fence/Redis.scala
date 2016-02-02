@@ -4,7 +4,7 @@ import _root_.java.lang.{Long => JLong}
 import java.util.UUID
 
 import com.twitter.finagle.redis.util.{BytesToString, StringToChannelBuffer}
-import com.twitter.util.Await
+import com.twitter.util.{Future, Await}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
 
@@ -33,8 +33,8 @@ object Redis {
     token
   }
 
-  def checkToken(token: UUID): Option[JLong] = {
-    Await.result(redis.ttl(StringToChannelBuffer(tokenNamespace+token.toString)))
+  def checkToken(token: UUID): Future[Option[JLong]] = {
+    redis.ttl(StringToChannelBuffer(tokenNamespace+token.toString))
   }
 
   def deleteToken(token: UUID): Boolean = {
