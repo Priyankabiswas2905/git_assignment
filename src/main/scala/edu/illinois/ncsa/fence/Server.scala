@@ -133,12 +133,13 @@ object Server extends TwitterServer {
       val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
-          log.debug(s"$key -> $value")
+          log.debug(s"Streaming upload header: $key -> $value")
           newReq.headerMap.add(key, value)
         }
       }
       newReq.headerMap.set(Fields.Host, conf.getString("dts.url"))
       newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      newReq.headerMap.set(Fields.Connection, "keep-alive")
       dts(newReq)
     }
   }
@@ -152,12 +153,13 @@ object Server extends TwitterServer {
       val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
-          log.debug(s"$key -> $value")
+          log.debug(s"Streaming upload header: $key -> $value")
           newReq.headerMap.add(key, value)
         }
       }
       newReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
       newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      newReq.headerMap.set(Fields.Connection, "keep-alive")
       dap(newReq)
     }
   }
@@ -167,6 +169,7 @@ object Server extends TwitterServer {
     case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => authToken andThen streamingDTS("/api/files")
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => authToken andThen streamingDTS("/api/extractions/upload_file")
     case (_, "dts" /: path) => authToken andThen dtsPath(path)
     case (Get, Root / "ok") => ok
     case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
