@@ -7,7 +7,7 @@ scalaVersion := "2.11.7"
 mainClass in assembly := Some("edu.illinois.ncsa.fence.Server")
 
 lazy val versions = new {
-  val finatra = "2.1.2"
+  val finatra = "2.1.5"
   val guice = "4.0"
   val logback = "1.0.13"
   val jvm = "1.7"
@@ -25,11 +25,11 @@ resolvers ++= Seq(
 
 
 libraryDependencies ++= Seq(
-  "com.twitter" %% "finagle-core" % "6.31.0",
-  "com.twitter" %% "finagle-http" % "6.31.0",
-  "com.twitter" %% "finagle-stats" % "6.31.0",
-  "com.twitter" %% "finagle-redis" % "6.31.0",
-  "com.twitter" %% "twitter-server" % "1.16.0",
+  "com.twitter" %% "finagle-core" % "6.34.0",
+  "com.twitter" %% "finagle-http" % "6.34.0",
+  "com.twitter" %% "finagle-stats" % "6.34.0",
+  "com.twitter" %% "finagle-redis" % "6.34.0",
+  "com.twitter" %% "twitter-server" % "1.19.0",
   "com.typesafe" % "config" % "1.2.1",
 
   "com.twitter.finatra" %% "finatra-http" % versions.finatra % "provided",

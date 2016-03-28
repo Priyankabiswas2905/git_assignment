@@ -170,6 +170,7 @@ object Server extends TwitterServer {
     case (_, "dap" /: path) => authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => authToken andThen streamingDTS("/api/files")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => authToken andThen streamingDTS("/api/extractions/upload_file")
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => authToken andThen streamingDTS("/api/extractions/upload_url")
     case (_, "dts" /: path) => authToken andThen dtsPath(path)
     case (Get, Root / "ok") => ok
     case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
