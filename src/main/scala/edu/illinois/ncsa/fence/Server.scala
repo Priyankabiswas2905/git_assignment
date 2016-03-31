@@ -6,10 +6,11 @@ import com.twitter.conversions.time._
 import com.twitter.finagle.http.Method.{Delete, Get, Post}
 import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http._
+import com.twitter.finagle.http.filter.{Cors, CorsFilter}
 import com.twitter.finagle.http.path.{Path, _}
 import com.twitter.finagle.http.service.RoutingService
 import com.twitter.finagle.service.TimeoutFilter
-import com.twitter.finagle.{ListeningServer, Http, Service, SimpleFilter}
+import com.twitter.finagle.{Http, ListeningServer, Service, SimpleFilter}
 import com.twitter.server.TwitterServer
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
@@ -162,19 +163,21 @@ object Server extends TwitterServer {
     }
   }
 
+  val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
+
   val router = RoutingService.byMethodAndPathObject[Request] {
-    case (Get, Root / "dap" / "alive") => authToken andThen dapPath(Path("alive"))
-    case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
-    case (_, "dap" /: path) => authToken andThen dapPath(path)
-    case (Post, Root / "dts" / "api" / "files") => authToken andThen streamingDTS("/api/files")
-    case (_, "dts" /: path) => authToken andThen dtsPath(path)
+    case (Get, Root / "dap" / "alive") => cors andThen authToken andThen dapPath(Path("alive"))
+    case (Post, "dap" /: "convert" /: path) => cors andThen authToken andThen streamingDAP("/convert/" + path)
+    case (_, "dap" /: path) => cors andThen authToken andThen dapPath(path)
+    case (Post, Root / "dts" / "api" / "files") => cors andThen authToken andThen streamingDTS("/api/files")
+    case (_, "dts" /: path) => cors andThen authToken andThen dtsPath(path)
     case (Get, Root / "ok") => ok
-    case (Post, Root / "keys") => crowdAuth andThen Auth.createApiKey()
-    case (Delete, Root / "keys" / key) => crowdAuth andThen Auth.deleteApiKey(key)
-    case (Post, Root / "keys" / key / "tokens") => crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
-    case (Get, Root / "tokens" / token) => crowdAuth andThen Auth.checkToken(UUID.fromString(token))
-    case (Delete, Root / "tokens" / token) => crowdAuth andThen Auth.deleteToken(UUID.fromString(token))
-    case (Get, Root / "crowd" / "session") => Crowd.session()
+    case (Post, Root / "keys") => cors andThen crowdAuth andThen Auth.createApiKey()
+    case (Delete, Root / "keys" / key) => cors andThen crowdAuth andThen Auth.deleteApiKey(key)
+    case (Post, Root / "keys" / key / "tokens") => cors andThen crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
+    case (Get, Root / "tokens" / token) => cors andThen crowdAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (Delete, Root / "tokens" / token) => cors andThen crowdAuth andThen Auth.deleteToken(UUID.fromString(token))
+    case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
     case _ => notFound
   }
 
