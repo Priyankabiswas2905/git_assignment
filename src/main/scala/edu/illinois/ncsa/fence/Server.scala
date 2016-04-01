@@ -105,6 +105,7 @@ object Server extends TwitterServer {
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        r.headerMap.remove("Access-control-allow-credential")
         Future.value(r)
       }
       rep
@@ -183,6 +184,7 @@ object Server extends TwitterServer {
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        r.headerMap.remove("Access-control-allow-credential")
         Future.value(r)
       }
       rep
