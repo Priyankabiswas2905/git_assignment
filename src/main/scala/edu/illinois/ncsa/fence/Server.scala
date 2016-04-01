@@ -101,7 +101,13 @@ object Server extends TwitterServer {
       dapReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
       dapReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
       log.debug("DAP session request: " + req)
-      dap(dapReq)
+      val rep = dap(dapReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
     }
   }
 
@@ -121,7 +127,13 @@ object Server extends TwitterServer {
       dtsReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
       log.debug("DTS: " + req)
       log.debug("DTS multipart: " + req.multipart)
-      dts(dtsReq)
+      val rep = dts(dtsReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
     }
   }
 
@@ -141,7 +153,13 @@ object Server extends TwitterServer {
       newReq.headerMap.set(Fields.Host, conf.getString("dts.url"))
       newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
       newReq.headerMap.set(Fields.Connection, "keep-alive")
-      dts(newReq)
+      val rep = dts(newReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
     }
   }
 
@@ -161,7 +179,13 @@ object Server extends TwitterServer {
       newReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
       newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
       newReq.headerMap.set(Fields.Connection, "keep-alive")
-      dap(newReq)
+      val rep = dap(newReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
     }
   }
 
