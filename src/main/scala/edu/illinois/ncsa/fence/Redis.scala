@@ -7,6 +7,10 @@ import com.twitter.finagle.redis.util.{BufToString, BytesToString, StringToBuf, 
 import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
+import com.twitter.conversions.time._
+import com.twitter.finagle.builder.ClientBuilder
+import com.twitter.finagle.redis.{Client, Redis}
+import com.twitter.io.Buf
 
 import scala.util.{Failure, Success, Try}
 
@@ -20,8 +24,17 @@ object Redis {
   private val tokenNamespace = "token:"
   private val apiKeyNamespace = "key:"
   private val userNamespace = "user:"
+  private val host = conf.getString("redis.host")+":"+conf.getString("redis.port")
 
-  val redis = com.twitter.finagle.redis.Client(conf.getString("redis.host")+":"+conf.getString("redis.port"))
+//  val redis = com.twitter.finagle.redis.Client(host)
+
+  val redis = Client(
+    ClientBuilder()
+      .hosts(host)
+      .hostConnectionLimit(10)
+      .codec(com.twitter.finagle.redis.Redis())
+      .daemon(true)
+      .buildFactory())
 
   def createToken(key: UUID): UUID = {
     val token = Token.newToken()
@@ -99,10 +112,14 @@ object Redis {
   }
 
   def getAPIKey(apiKey: String): Try[String] = {
-    Await.result(redis.get(StringToBuf(apiKeyNamespace+apiKey))) match {
+    Await.result(redis.get(StringToBuf(apiKeyNamespace+apiKey)), 5.seconds) match {
       case Some(buf) => Success(BufToString(buf))
       case None => Failure(new Exception(s"Api Key $apiKey not found"))
     }
+  }
+
+  def getAPIKeyFuture(apiKey: String): Future[Option[Buf]] = {
+    redis.get(StringToBuf(apiKeyNamespace+apiKey))
   }
 
   def close(): Unit = {

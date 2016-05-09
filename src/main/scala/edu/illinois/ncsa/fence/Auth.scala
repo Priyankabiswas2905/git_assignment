@@ -3,13 +3,14 @@ package edu.illinois.ncsa.fence
 import java.util.UUID
 
 import com.twitter.finagle.http._
+import com.twitter.finagle.redis.util.BufToString
 import com.twitter.finagle.{Service, SimpleFilter, http}
 import com.twitter.io.Buf
 import com.twitter.server.util.JsonConverter
 import com.twitter.util.{Base64StringEncoder, Future}
 import edu.illinois.ncsa.fence.Server._
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 /**
   * Authentication and authorization methods.
@@ -22,19 +23,24 @@ object Auth {
 
   def newAccessToken(key: UUID) = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
-      Redis.getAPIKey(key.toString) match {
-        case Success(username) =>
-          val token = Redis.createToken(key)
-          val res = Response(req.version, Status.Ok)
-          res.contentType = "application/json;charset=UTF-8"
-          res.content = Buf.Utf8(JsonConverter.writeToString(Map("token"->token)))
-          accessTokenStats.incr()
-          Future.value(res)
-        case Failure(ex) =>
-          val res = Response(req.version, Status.NotFound)
-          res.contentType = "application/json;charset=UTF-8"
-          res.content = Buf.Utf8(JsonConverter.writeToString(Map("error"->"API key not found")))
-          Future.value(res)
+      Redis.getAPIKeyFuture(key.toString).flatMap { optBuf =>
+        optBuf match {
+          case Some(buf) => {
+            val keyFromRedis = BufToString(buf)
+            val token = Redis.createToken(key)
+            val res = Response(req.version, Status.Ok)
+            res.contentType = "application/json;charset=UTF-8"
+            res.content = Buf.Utf8(JsonConverter.writeToString(Map("token"->token)))
+            accessTokenStats.incr()
+            Future.value(res)
+          }
+          case None => {
+            val res = Response(req.version, Status.NotFound)
+            res.contentType = "application/json;charset=UTF-8"
+            res.content = Buf.Utf8(JsonConverter.writeToString(Map("error"->"API key not found")))
+            Future.value(res)
+          }
+        }
       }
     }
   }
