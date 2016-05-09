@@ -204,7 +204,7 @@ object Server extends TwitterServer {
     case (Get, Root / "ok") => ok
     case (Post, Root / "keys") => cors andThen crowdAuth andThen Auth.createApiKey()
     case (Delete, Root / "keys" / key) => cors andThen crowdAuth andThen Auth.deleteApiKey(key)
-    case (Post, Root / "keys" / key / "tokens") => cors andThen crowdAuth andThen Auth.newAccessToken(UUID.fromString(key))
+    case (Post, Root / "keys" / key / "tokens") => cors andThen Auth.newAccessToken(UUID.fromString(key))
     case (Get, Root / "tokens" / token) => cors andThen crowdAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => cors andThen crowdAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
