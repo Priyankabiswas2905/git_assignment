@@ -133,6 +133,7 @@ object Auth {
       // validate token
       request.headerMap.get(Fields.Authorization) match {
         case Some(token) =>
+          log.debug("Checking token " + token)
           Redis.checkToken(UUID.fromString(token)) flatMap { someTtl =>
             someTtl match {
               case Some(ttl) =>

@@ -3,8 +3,9 @@ API Gateway for Brown Dog Services
 
 *Work In Progress*
 
-1. Make sure you have Java 1.8 and sbt installed
+1. Make sure you have Java 1.8, sbt and redis installed
 2. Create an *application.conf* file under *src/main/resources*. You can use *reference.conf* as an example.
+3. Start redis `redis-server`
 3. Run `sbt "run-main edu.illinois.ncsa.fence.Server -log.level=DEBUG"`
 
 To build and run fat jar do steps 1 and 2 and then:

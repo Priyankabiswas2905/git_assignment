@@ -40,9 +40,9 @@ object Server extends TwitterServer {
 
   private val conf = ConfigFactory.load()
 
-  val dap: Service[Request, Response] = Http.newService(conf.getString("dap.url"))
+  val dap: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dap.url"))
 
-  val dts: Service[Request, Response] = Http.newService(conf.getString("dts.url"))
+  val dts: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dts.url"))
 
   val handleExceptions = new HandleExceptions
 
@@ -62,6 +62,7 @@ object Server extends TwitterServer {
 
   val ok = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
+      log.debug("Called /ok")
       val res = Response(req.version, Status.Ok)
       res.contentString = "Everything is O.K."
       okStats.incr()
@@ -153,7 +154,6 @@ object Server extends TwitterServer {
       }
       newReq.headerMap.set(Fields.Host, conf.getString("dts.url"))
       newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
-      newReq.headerMap.set(Fields.Connection, "keep-alive")
       val rep = dts(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
@@ -179,7 +179,6 @@ object Server extends TwitterServer {
       }
       newReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
       newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
-      newReq.headerMap.set(Fields.Connection, "keep-alive")
       val rep = dap(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
@@ -195,7 +194,7 @@ object Server extends TwitterServer {
 
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root / "dap" / "alive") => cors andThen authToken andThen dapPath(Path("alive"))
-    case (Post, "dap" /: "convert" /: path) => cors andThen authToken andThen streamingDAP("/convert/" + path)
+    case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => cors andThen authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => cors andThen authToken andThen streamingDTS("/api/files")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen authToken andThen streamingDTS("/api/extractions/upload_file")
@@ -212,7 +211,7 @@ object Server extends TwitterServer {
   }
 
   def start(): ListeningServer = {
-    val server = Http.serve(":8080", router)
+    val server = Http.server.withStreaming(enabled = true).serve(":8080", router)
     onExit {
       log.info("Closing server...")
       server.close()
@@ -229,6 +228,6 @@ object Server extends TwitterServer {
       server.close()
       Redis.close()
     }
-    Await.ready(server)
+    Await.result(server)
   }
 }

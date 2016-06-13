@@ -111,6 +111,7 @@ object Redis {
     }
   }
 
+  @deprecated
   def getAPIKey(apiKey: String): Try[String] = {
     Await.result(redis.get(StringToBuf(apiKeyNamespace+apiKey)), 5.seconds) match {
       case Some(buf) => Success(BufToString(buf))

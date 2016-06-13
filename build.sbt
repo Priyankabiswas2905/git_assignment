@@ -8,7 +8,7 @@ mainClass in assembly := Some("edu.illinois.ncsa.fence.Server")
 
 lazy val versions = new {
   val finagle = "6.35.0"
-  val finatra = "2.1.5"
+  val finatra = "2.1.6"
   val guice = "4.0"
   val logback = "1.0.13"
   val jvm = "1.7"
