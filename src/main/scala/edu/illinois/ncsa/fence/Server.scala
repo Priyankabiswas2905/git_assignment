@@ -140,7 +140,7 @@ object Server extends TwitterServer {
   }
 
   def streamingDTS(path: String): Service[Request, Response] = {
-    log.debug("Special upload endpoint")
+    log.debug("Streaming DTS Upload")
     Service.mk { (req: Request) =>
       val newReq = Request(Http11, Post, path, req.reader)
       val user = conf.getString("dts.user")
@@ -165,7 +165,7 @@ object Server extends TwitterServer {
   }
 
   def streamingDAP(path: String): Service[Request, Response] = {
-    log.debug("Special upload endpoint")
+    log.debug("Streaming DAP Upload")
     Service.mk { (req: Request) =>
       val newReq = Request(Http11, Post, path, req.reader)
       val user = conf.getString("dap.user")
@@ -181,6 +181,15 @@ object Server extends TwitterServer {
       newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
       val rep = dap(newReq)
       rep.flatMap { r =>
+        val hostname = conf.getString("fence.hostname")
+        val dapURL = conf.getString("dap.url")
+        log.debug(s"DAP convert request ${newReq.uri} ${hostname}")
+        log.debug(s"DAP convert response ${r.mediaType} ${r.contentString}")
+        if (r.contentString.contains(dapURL)) {
+          val body = r.contentString.replaceAll("http://" + dapURL, hostname + "/dap")
+          log.debug(s"New body is $body")
+          r.setContentString(body)
+        }
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
         r.headerMap.remove("Access-control-allow-credential")
@@ -194,7 +203,7 @@ object Server extends TwitterServer {
 
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root / "dap" / "alive") => cors andThen authToken andThen dapPath(Path("alive"))
-    case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
+    case (Post, "dap" /: "convert" /: path) =>  cors andThen authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => cors andThen authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => cors andThen authToken andThen streamingDTS("/api/files")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen authToken andThen streamingDTS("/api/extractions/upload_file")
