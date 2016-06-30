@@ -189,6 +189,7 @@ object Server extends TwitterServer {
           val body = r.contentString.replaceAll("http://" + dapURL, hostname + "/dap")
           log.debug(s"New body is $body")
           r.setContentString(body)
+          r.headerMap.set(Fields.ContentLength, body.length.toString)
         }
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
