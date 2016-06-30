@@ -15,7 +15,8 @@ import com.twitter.server.TwitterServer
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Auth.AuthorizeToken
-import edu.illinois.ncsa.fence.Crowd.AuthorizeUserPassword
+import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
+import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 
 class HandleExceptions extends SimpleFilter[Request, Response] {
@@ -48,7 +49,20 @@ object Server extends TwitterServer {
 
   val authToken = new AuthorizeToken
 
-  val crowdAuth = new AuthorizeUserPassword
+  val userAuth: SimpleFilter[Request, Response] = conf.getString("auth.provider") match {
+    case "crowd" => {
+      log.debug("Using crowd authorization")
+      new CrowdAuthorizeUserPassword
+    }
+    case "local" => {
+      log.debug("Using local authorization")
+      new LocalAuthUser
+    }
+    case _ => {
+      log.debug("Defaulting to crowd authorization")
+      new CrowdAuthorizeUserPassword
+    }
+  }
 
 //  val timeoutFilter = new TimeoutFilter[Request, Response](5.seconds, new JavaTimer())
 
@@ -194,18 +208,18 @@ object Server extends TwitterServer {
 
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root / "dap" / "alive") => cors andThen authToken andThen dapPath(Path("alive"))
-    case (Post, "dap" /: "convert" /: path) => authToken andThen streamingDAP("/convert/" + path)
+    case (Post, "dap" /: "convert" /: path) => cors andThen authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => cors andThen authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => cors andThen authToken andThen streamingDTS("/api/files")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen authToken andThen streamingDTS("/api/extractions/upload_file")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => cors andThen authToken andThen streamingDTS("/api/extractions/upload_url")
     case (_, "dts" /: path) => cors andThen authToken andThen dtsPath(path)
     case (Get, Root / "ok") => ok
-    case (Post, Root / "keys") => cors andThen crowdAuth andThen Auth.createApiKey()
-    case (Delete, Root / "keys" / key) => cors andThen crowdAuth andThen Auth.deleteApiKey(key)
+    case (Post, Root / "keys") => cors andThen userAuth andThen Auth.createApiKey()
+    case (Delete, Root / "keys" / key) => cors andThen userAuth andThen Auth.deleteApiKey(key)
     case (Post, Root / "keys" / key / "tokens") => cors andThen Auth.newAccessToken(UUID.fromString(key))
-    case (Get, Root / "tokens" / token) => cors andThen crowdAuth andThen Auth.checkToken(UUID.fromString(token))
-    case (Delete, Root / "tokens" / token) => cors andThen crowdAuth andThen Auth.deleteToken(UUID.fromString(token))
+    case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
     case _ => notFound
   }
