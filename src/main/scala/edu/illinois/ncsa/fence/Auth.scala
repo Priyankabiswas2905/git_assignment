@@ -130,31 +130,48 @@ object Auth {
 
   class AuthorizeToken extends SimpleFilter[Request, Response] {
     def apply(request: Request, continue: Service[Request, Response]) = {
-      // validate token
-      request.headerMap.get(Fields.Authorization) match {
-        case Some(token) =>
-          log.debug("Checking token " + token)
-          Redis.checkToken(UUID.fromString(token)) flatMap { someTtl =>
-            someTtl match {
-              case Some(ttl) =>
-                if (ttl > 0) {
-                  continue(request)
-                } else {
-                  val errorResponse = Response(Version.Http11, Status.Forbidden)
-                  errorResponse.contentString = "Invalid token"
-                  Future(errorResponse)
-                }
-              case None =>
-                val errorResponse = Response(Version.Http11, Status.Forbidden)
-                errorResponse.contentString = "Invalid token"
-                Future(errorResponse)
+      try {
+        request.headerMap.get(Fields.Authorization) match {
+          case Some(token) =>
+            Redis.checkToken(UUID.fromString(token)) flatMap { someTtl =>
+              someTtl match {
+                case Some(ttl) =>
+                  if (ttl > 0) {
+                    continue(request)
+                  } else {
+                    invalidToken()
+                  }
+                case None => invalidToken()
+              }
             }
-          }
-        case None =>
-          val errorResponse = Response(Version.Http11, Status.Forbidden)
-          errorResponse.contentString = "Invalid token"
-          Future(errorResponse)
+          case None =>
+            request.params.get("token") map { token =>
+              Redis.checkToken(UUID.fromString(token)) flatMap { someTtl =>
+                someTtl match {
+                  case Some(ttl) =>
+                    if (ttl > 0) {
+                      continue(request)
+                    } else {
+                      invalidToken()
+                    }
+                  case None => invalidToken()
+                }
+              }
+            } getOrElse invalidToken()
+        }
+      } catch {
+        case iae: IllegalArgumentException => {
+          log.error(s"Invalid token - $iae")
+          invalidToken()
+        }
+        case _ => invalidToken()
       }
+    }
+
+    def invalidToken(): Future[Response] = {
+      val errorResponse = Response(Version.Http11, Status.Forbidden)
+      errorResponse.contentString = "Invalid token"
+      Future(errorResponse)
     }
   }
 
