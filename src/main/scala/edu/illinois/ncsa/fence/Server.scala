@@ -214,9 +214,19 @@ object Server extends TwitterServer {
     }
   }
 
+  def redirect(location: String): Service[Request, Response] = {
+    log.debug("Redirecting to " + location)
+    Service.mk { (req: Request) =>
+      val r = Response.apply(Http11, Status.MovedPermanently)
+      r.headerMap.set(Fields.Location, location)
+      Future.value(r)
+    }
+  }
+
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
 
   val router = RoutingService.byMethodAndPathObject[Request] {
+    case (Get, Root) => redirect(conf.getString("docs.root"))
     case (Get, Root / "dap" / "alive") => cors andThen authToken andThen dapPath(Path("alive"))
     case (Post, "dap" /: "convert" /: path) =>  cors andThen authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => cors andThen authToken andThen dapPath(path)
