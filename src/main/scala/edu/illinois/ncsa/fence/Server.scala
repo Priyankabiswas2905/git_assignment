@@ -228,7 +228,7 @@ object Server extends TwitterServer {
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root) => redirect(conf.getString("docs.root"))
     case (Get, Root / "dap" / "alive") => cors andThen authToken andThen dapPath(Path("alive"))
-    case (Post, "dap" /: "convert" /: path) =>  cors andThen authToken andThen streamingDAP("/convert/" + path)
+    case (_, "dap" /: "convert" /: path) =>  cors andThen authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => cors andThen authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => cors andThen authToken andThen streamingDTS("/api/files")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen authToken andThen streamingDTS("/api/extractions/upload_file")
