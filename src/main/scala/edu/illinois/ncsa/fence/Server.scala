@@ -231,6 +231,7 @@ object Server extends TwitterServer {
     case (_, "dap" /: "convert" /: path) =>  cors andThen authToken andThen streamingDAP("/convert/" + path)
     case (_, "dap" /: path) => cors andThen authToken andThen dapPath(path)
     case (Post, Root / "dts" / "api" / "files") => cors andThen authToken andThen streamingDTS("/api/files")
+    case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cors andThen authToken andThen streamingDTS("/api/files/" + fileId + "/extractions")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen authToken andThen streamingDTS("/api/extractions/upload_file")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => cors andThen authToken andThen streamingDTS("/api/extractions/upload_url")
     case (_, "dts" /: path) => cors andThen authToken andThen dtsPath(path)
