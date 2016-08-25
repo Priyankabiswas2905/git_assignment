@@ -15,7 +15,7 @@ To build and run fat jar do steps 1 and 2 and then:
 Sample endpoints
 ----------------
 - POST http://localhost:8080/keys (with username/password credentials)
-- POST http://localhost:8080/keys/8d4a0237-c754-4361-b361-23d6bee5fdb4/token (with username/password credentials)
+- POST http://localhost:8080/keys/8d4a0237-c754-4361-b361-23d6bee5fdb4/tokens (with username/password credentials)
 - http://localhost:8080/token/8d4a0237-c754-4361-b361-23d6bee5fdb4 (with username/password credentials)
 - http://localhost:8080/ok
 - http://localhost:8080/dap/alive
