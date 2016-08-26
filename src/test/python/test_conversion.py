@@ -1,14 +1,14 @@
+import pytest
 import requests
 import urllib
 from os.path import basename, splitext
 import sys
 from conftest import download_file
 
-
-def test_get_convert_png(host, api_token, timeout, testdata):
+def test_get_convert(host, api_token, timeout, conversion_data):
     endpoint = host + '/dap'
-    input_filename = testdata['file_url']
-    output = testdata['output_type']
+    input_filename = conversion_data['file_url']
+    output = conversion_data['output_type']
     output_path = '/tmp/' + str(0) + '_' + splitext(basename(input_filename))[0] + '.' + output
     r = convert_by_url(endpoint, api_token, input_filename, output, output_path, int(timeout))
     print "Output path ", output_path
@@ -18,7 +18,7 @@ def test_get_convert_png(host, api_token, timeout, testdata):
     else:
         output_filename = output_path + basename(r.text)
     filename = download_file(r.text, output_filename, api_token, 90)
-    print("Conversion output " + filename)
+    print("Downloaded " + filename + " from " + output_filename)
     assert r.status_code == 200
 
 

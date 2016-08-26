@@ -80,10 +80,14 @@ def api_token(host, username, password, api_key):
 
 
 def pytest_generate_tests(metafunc):
-    if 'testdata' in metafunc.fixturenames:
-        with open("testdata.yml", 'r') as f:
+    if 'conversion_data' in metafunc.fixturenames:
+        with open("test_conversion_data.yml", 'r') as f:
             Iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
-            metafunc.parametrize('testdata', [i for i in Iterations])
+            metafunc.parametrize('conversion_data', [i for i in Iterations])
+    if 'extraction_data' in metafunc.fixturenames:
+        with open("test_extraction_data.yml", 'r') as f:
+            Iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
+            metafunc.parametrize('extraction_data', [i for i in Iterations])
 
 
 def download_file(url, filename, api_token, wait):

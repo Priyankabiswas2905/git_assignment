@@ -1,0 +1,8 @@
+-
+  description: Test ncsa.image.caltech101
+  file_url: http://browndog.ncsa.illinois.edu/examples/caltech101/llama.jpg
+  output: http://browndog.ncsa.illinois.edu/examples/outputs/llama.jpg.json
+-
+  description: Test ncsa.nlp.language
+  file_url: http://browndog.ncsa.illinois.edu/examples/tmp/ncsa-deutsch.txt
+  output: http://browndog.ncsa.illinois.edu/examples/outputs/ncsa-deutsch.json
