@@ -5,23 +5,20 @@ import json
 import time
 import urllib2
 
-
+# @pytest.mark.skip(reason="testing conversions")
 def test_get_extract(host, api_token, timeout, extraction_data):
+    print(extraction_data['description'])
     endpoint = host + '/dts/api'
     input_url = extraction_data['file_url']
     output = extraction_data['output']
-    output_path = '/tmp/' + str(0) + '_' + splitext(basename(input_url))[0] + '.' + output
-    metadata = extract_by_url(endpoint, api_token, input_url, output, output_path, int(timeout))
-    print "Output path ", output_path
+    metadata = extract_by_url(endpoint, api_token, input_url, int(timeout))
     print("Extraction output " + metadata)
     if output.startswith("http://"):
         output = urllib2.urlopen(output).read().strip()
-    else:
-        output = open(output).read().strip()
     assert metadata.find(output) != -1
 
 
-def extract_by_url(endpoint, api_token, input_url, output, output_path, timeout):
+def extract_by_url(endpoint, api_token, input_url, timeout):
     metadata = json.dumps({})
     headers = {'Authorization': api_token, 'Content-Type': 'application/json'}
     api_call = endpoint + '/extractions/upload_url'
