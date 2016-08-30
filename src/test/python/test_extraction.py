@@ -4,6 +4,7 @@ import sys
 import json
 import time
 import urllib2
+import pytest
 
 # @pytest.mark.skip(reason="testing conversions")
 def test_get_extract(host, api_token, timeout, extraction_data):

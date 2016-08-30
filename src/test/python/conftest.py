@@ -1,8 +1,6 @@
 import pytest
 import requests
 import time
-import datetime
-from pymongo import MongoClient
 import ruamel.yaml
 
 
@@ -110,15 +108,3 @@ def download_file(url, filename, api_token, wait):
     except:
         raise
     return filename
-
-
-def report(host, hostname, type, total, success, message, elapsed_time, mongo_host, mongo_db, mongo_collection):
-    """Write the test results to mongo database"""
-    document = {"host": host, "hostname": hostname, "type": type,
-                "total": total, "success": success, "failures": (total - success),
-                "message": message,
-                "elapsed_time": elapsed_time, "date": datetime.datetime.utcnow()}
-    mc = MongoClient(mongo_host)
-    db = mc[mongo_db]
-    tests = db[mongo_collection]
-    tests.insert(document)
