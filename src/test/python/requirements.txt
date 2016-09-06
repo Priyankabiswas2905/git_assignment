@@ -1,0 +1,7 @@
+py==1.4.31
+pymongo==3.3.0
+pytest==3.0.0
+requests==2.11.1
+ruamel.ordereddict==0.4.9
+ruamel.yaml==0.12.5
+typing==3.5.2.2

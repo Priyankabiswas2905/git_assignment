@@ -1,0 +1,108 @@
+-
+  description: Test image conversion, JPEG-2000 to JPG
+  file_url: http://browndog.ncsa.illinois.edu/examples/0005.jp2
+  output_type: jpg
+-
+  description: Test image conversion, SID to JPG
+  file_url: http://browndog.ncsa.illinois.edu/examples/105_1.sid
+  output_type: jpg
+-
+  description: Test image coversion, TGA to JPG
+  file_url: http://browndog.ncsa.illinois.edu/examples/marbles.tga
+  output_type: jpg
+-
+  description: Test image conversion, SVG to JPG
+  file_url: http://browndog.ncsa.illinois.edu/examples/cache/NewTux.svg
+  output_type: jpg
+-
+  description: Test document conversions, DOCX to PDF
+  file_url: http://browndog.ncsa.illinois.edu/examples/Astell1700.docx
+  output_type: pdf
+-
+  description: Test document conversions, DOCX to TXT
+  file_url: http://browndog.ncsa.illinois.edu/examples/Astell1700.docx
+  output_type: txt
+-
+  description: Test document conversion, EPUB to PDF
+  file_url: http://browndog.ncsa.illinois.edu/examples/cache/moby-dick-20120118.epub
+  output_type: pdf
+-
+  description: Test document conversion, EPUB to TXT
+  file_url: http://browndog.ncsa.illinois.edu/examples/cache/moby-dick-20120118.epub
+  output_type: txt
+-
+  description: Test daffodil conversion, CSV to XML
+  file_url: http://browndog.ncsa.illinois.edu/examples/dob.csv
+  output_type: xml
+-
+  description: Test daffodil/chained conversion, PNG to PGM to XML
+  file_url: http://browndog.ncsa.illinois.edu/examples/favicon.png
+  output_type: xml
+-
+  description: Test 3D conversion, DXF to PDF and DXF to JPG
+  file_url: http://browndog.ncsa.illinois.edu/examples/plane.dxf
+  output_type: pdf
+-
+  description: Test 3D conversion, DXF to PDF and DXF to JPG
+  file_url: http://browndog.ncsa.illinois.edu/examples/plane.dxf
+  output_type: jpg
+-
+  description: Test PEcAn conversion, Ameriflux to netCDF-CF
+  file_url: http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml
+  output_type: pecan.zip
+-
+  description: Test chained PEcAn conversion, Ameriflux to netCDF-CF to SIPNET format
+  file_url: http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml
+  output_type: clim
+-
+  description: Test audio conversion, FLAC to MP3
+  file_url: http://browndog.ncsa.illinois.edu/examples/cache/Hallelujah.flac
+  output_type: mp3
+-
+  description: Test video conversion, MPG to MP4
+  file_url: http://browndog.ncsa.illinois.edu/examples/cache/grb_1.mpg
+  output_type: mp4
+-
+  description: Test video conversion, FLV to MP4
+  file_url: http://browndog.ncsa.illinois.edu/examples/cache/neilYoungNeedleAndTheDamageDone.flv
+  output_type: mp4
+-
+  description: https://orion.math.iastate.edu/burkardt/data/pgm/balloons.pgm
+  file_url: https://orion.math.iastate.edu/burkardt/data/pgm/balloons.pgm
+  output_type: jpg
+-
+  description: http://upload.wikimedia.org/wikipedia/commons/b/b0/NewTux.svg
+  file_url: http://upload.wikimedia.org/wikipedia/commons/b/b0/NewTux.svg
+  output_type: jpg
+#-
+#  description: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
+#  file_url: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
+#  output_type: stp
+#-
+#  description: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
+#  file_url: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
+#  output_type: obj
+-
+  description: http://thesixteendigital.com.s3.amazonaws.com/testfiles/Hallelujah.flac
+  file_url: http://thesixteendigital.com.s3.amazonaws.com/testfiles/Hallelujah.flac
+  output_type: mp3
+-
+  description: http://hubblesource.stsci.edu/sources/video/clips/details/images/grb_1.mpg
+  file_url: http://hubblesource.stsci.edu/sources/video/clips/details/images/grb_1.mpg
+  output_type: mp4
+-
+  description: http://www.fullimpactwebdesign.com/solutions/websiteDevelopment/videoGalleryWebsites/files/neilYoungNeedleAndTheDamageDone.flv
+  file_url: http://www.fullimpactwebdesign.com/solutions/websiteDevelopment/videoGalleryWebsites/files/neilYoungNeedleAndTheDamageDone.flv
+  output_type: mp4
+-
+  description: https://epub-samples.googlecode.com/files/moby-dick-20120118.epub
+  file_url: https://epub-samples.googlecode.com/files/moby-dick-20120118.epub
+  output_type: txt
+-
+  description: https://epub-samples.googlecode.com/files/moby-dick-20120118.epub
+  file_url: https://epub-samples.googlecode.com/files/moby-dick-20120118.epub
+  output_type: pdf
+-
+  description: https://wiki.csiamerica.com/download/attachments/2590320/sample%20solid%20-%20pyramid%20base.DXF
+  file_url: https://wiki.csiamerica.com/download/attachments/2590320/sample%20solid%20-%20pyramid%20base.DXF
+  output_type: pdf
