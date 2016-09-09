@@ -18,14 +18,20 @@ def main():
         failures = int(doc['testsuite']['@failures'])
         time = doc['testsuite']['@time']
         msg = str(tests) + " tests, " + str(failures) + " failures, " + str(errors) + " errors, " + str(skips) + " skipped\n\n"
+        errorlog = str()
+
         for testcase in doc['testsuite']['testcase']:
             print testcase['@classname']
+            if 'failure' in testcase :
+                errorlog += (testcase['failure']['#text']) +'\n'
+                errorlog += '----------------------------------------------------\n'
+
         if args.mailserver:
             with open("watchers.yml", 'r') as f:
                 recipients = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
                 if failures > 0 or errors > 0:
                     email_addresses = [r['address'] for r in recipients if r['get_failure'] is True]
-                    email_failures(host, email_addresses, msg, time)
+                    email_failures(host, email_addresses, msg, time, errorlog)
                 else:
                     email_addresses = [r['address'] for r in recipients if r['get_success'] is True]
                     email_success(host, email_addresses, msg, time)
@@ -45,13 +51,15 @@ def report_mongo(host, hostname, type, total, errors, failures, skip, message, e
     tests = db[mongo_collection]
     tests.insert(document)
 
-def email_failures(from_host, email_addresses, msg, ellapsed_time):
+def email_failures(from_host, email_addresses, msg, ellapsed_time, errorlog):
     message = 'From: \"' + from_host + '\" <devnull@ncsa.illinois.edu>\n'
     message += 'To: ' + ', '.join(email_addresses) + '\n'
     message += 'Subject: Brown Dog Tests Failed\n\n'
     message += 'Failures:\n\n'
     message += msg
-    message += 'Elapsed time: ' + str(ellapsed_time)
+    message += 'Elapsed time: ' + str(ellapsed_time)+ '\n'
+    message += '++++++++++++++++++++++++++++++ ERROR LOG ++++++++++++++++++++++++++++++++++\n'
+    message += errorlog
 
     mailserver = SMTP(args.mailserver)
     for watcher in email_addresses:
