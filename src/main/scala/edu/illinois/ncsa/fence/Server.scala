@@ -18,6 +18,7 @@ import edu.illinois.ncsa.fence.Auth.AuthorizeToken
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
+import scala.util.parsing.json.JSON
 
 class HandleExceptions extends SimpleFilter[Request, Response] {
   def apply(request: Request, service: Service[Request, Response]) = {
@@ -44,6 +45,8 @@ object Server extends TwitterServer {
   val dap: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dap.url"))
 
   val dts: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dts.url"))
+  
+  val dw: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dw.url"))
 
   val handleExceptions = new HandleExceptions
 
@@ -222,6 +225,25 @@ object Server extends TwitterServer {
       Future.value(r)
     }
   }
+  
+  def datawolfPath(path: String): Service[Request, Response] = {
+    log.debug("Datawolf request")
+    Service.mk { (req: Request) =>
+      val newReq = Request(Http11, Post, path, req.reader)
+      val fenceURL = conf.getString("fence.hostname")
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          newReq.headerMap.add(key, value)
+        }
+      }
+      val rep = dw(newReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+    }
+  }
 
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
 
@@ -242,6 +264,7 @@ object Server extends TwitterServer {
     case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
+    case (Post, Root / "dw" / "provenance") => cors andThen authToken andThen datawolfPath("/datawolf/browndog/provenance")
     case _ => notFound
   }
 
