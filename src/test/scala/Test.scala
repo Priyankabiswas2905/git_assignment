@@ -1,10 +1,7 @@
-package edu.illinois.ncsa.fence
-
 import com.twitter.finagle.http.{Request, Response, Status}
 import com.twitter.finagle.{Http, Service}
 import com.twitter.io.Reader
 import com.twitter.util.{Await, Future}
-import com.twitter.conversions.time._
 
 /**
   * Testing Await.result

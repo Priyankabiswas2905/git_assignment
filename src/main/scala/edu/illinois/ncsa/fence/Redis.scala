@@ -24,6 +24,7 @@ object Redis {
   private val tokenNamespace = "token:"
   private val apiKeyNamespace = "key:"
   private val userNamespace = "user:"
+  private val counts = "counts:"
   private val host = conf.getString("redis.host")+":"+conf.getString("redis.port")
 
 //  val redis = com.twitter.finagle.redis.Client(host)
@@ -121,6 +122,14 @@ object Redis {
 
   def getAPIKeyFuture(apiKey: String): Future[Option[Buf]] = {
     redis.get(StringToBuf(apiKeyNamespace+apiKey))
+  }
+
+  def increaseCounter(counter: String) {
+    redis.incr(StringToBuf(counts+counter))
+  }
+
+  def logBytes(endpoint: String, length: Int): Unit = {
+    redis.incrBy(StringToBuf(counts+"bytes:"+endpoint), length)
   }
 
   def close(): Unit = {
