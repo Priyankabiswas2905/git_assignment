@@ -189,13 +189,13 @@ h6 {
     </tr>
     <tr>
       <td></td>
-      <td colspan="4">
+      <td colspan="3">
         <xsl:value-of select="error/@message"/>
       </td>
     </tr>
     <tr>
       <td></td>
-      <td colspan="4">
+      <td colspan="3">
         <pre class="backtrace">
           <xsl:value-of select="error"/>
         </pre>
@@ -212,13 +212,13 @@ h6 {
     </tr>
     <tr>
       <td></td>
-      <td colspan="4">
+      <td colspan="3">
         <xsl:value-of select="failure/@message"/>
       </td>
     </tr>
     <tr>
       <td></td>
-      <td colspan="4">
+      <td colspan="3">
         <pre class="backtrace">
           <xsl:value-of select="failure"/>
         </pre>
@@ -235,7 +235,7 @@ h6 {
     </tr>
     <tr>
       <td></td>
-      <td colspan="4">
+      <td colspan="3">
         <xsl:value-of select="skipped/@message"/>
       </td>
     </tr>
@@ -247,7 +247,6 @@ h6 {
       <td><xsl:value-of select="@classname"/></td>
       <td><xsl:value-of select="@name"/></td>
       <td><xsl:value-of select="@time"/></td>
-      <td></td>
     </tr>
   </xsl:template>
 
