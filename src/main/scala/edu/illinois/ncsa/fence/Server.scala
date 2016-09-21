@@ -49,18 +49,15 @@ object Server extends TwitterServer {
   val authToken = new AuthorizeToken
 
   val userAuth: SimpleFilter[Request, Response] = conf.getString("auth.provider") match {
-    case "crowd" => {
+    case "crowd" =>
       log.debug("Using crowd authorization")
       new CrowdAuthorizeUserPassword
-    }
-    case "local" => {
+    case "local" =>
       log.debug("Using local authorization")
       new LocalAuthUser
-    }
-    case _ => {
+    case _ =>
       log.debug("Defaulting to crowd authorization")
       new CrowdAuthorizeUserPassword
-    }
   }
 
   val authorizedDAP = authToken andThen polyglot
@@ -172,8 +169,11 @@ object Server extends TwitterServer {
         Future.value(r)
       }
       log.debug("Uploaded bytes for extraction " +  req.getLength())
-      Redis.increaseCounter("extractions")
-      Redis.logBytes("extractions", req.getLength())
+      // log stats and events
+      val logKey = "extractions"
+      Redis.storeEvent("extraction", "file:///", "user@example.com", req.remoteSocketAddress.toString)
+      Redis.logBytes(logKey, req.getLength())
+      Redis.increaseCounter(logKey)
       rep
     }
   }
@@ -181,9 +181,6 @@ object Server extends TwitterServer {
   def extractURL(path: String): Service[Request, Response] = {
     log.debug("Extract from URL " + path)
     Service.mk { (req: Request) =>
-      // log size of file by send HEAD to file url
-      val fileurl = Clowder.extractFileURL(req)
-      ExternalResources.contentLengthFromHead(fileurl, "extractions")
       // create new request against Clowder
       val newReq = Request(Http11, Post, path, req.reader)
       val user = conf.getString("dts.user")
@@ -204,8 +201,13 @@ object Server extends TwitterServer {
         Future.value(r)
       }
       log.debug("Uploaded bytes for extraction " +  req.getLength())
-      // increment activity count
-      Redis.increaseCounter("extractions")
+      // log stats and events
+      val logKey = "extractions"
+      val fileurl = Clowder.extractFileURL(req)
+      ExternalResources.contentLengthFromHead(fileurl, logKey)
+      Redis.storeEvent("extraction", fileurl, "user@example.com", req.remoteSocketAddress.toString)
+      Redis.logBytes(logKey, req.getLength())
+      Redis.increaseCounter(logKey)
       rep
     }
   }
@@ -240,17 +242,21 @@ object Server extends TwitterServer {
         r.headerMap.remove("Access-control-allow-credential")
         Future.value(r)
       }
+      log.debug("Uploaded bytes for conversion " +  req.getLength())
+      // log events
+      val logKey = "conversions"
+      Redis.storeEvent("conversion", "file:///", "user@example.com", req.remoteSocketAddress.toString)
+      Redis.increaseCounter(logKey)
+      Redis.logBytes(logKey, req.getLength())
       rep
     }
   }
 
   def convertURL(fileType: String, encodedUrl: String): Service[Request, Response] = {
     val url = URLDecoder.decode(encodedUrl, "UTF-8")
-    log.debug("Convert file from url " + encodedUrl)
     log.debug("Convert file from url " + url)
     Service.mk { (req: Request) =>
-      // log size of file by send HEAD to file url
-      ExternalResources.contentLengthFromHead(url, "conversions")
+      // new request
       val path = "/convert/" + fileType + "/" + encodedUrl
       val newReq = Request(Http11, Post, path, req.reader)
       val user = conf.getString("dap.user")
@@ -279,6 +285,12 @@ object Server extends TwitterServer {
         r.headerMap.remove("Access-control-allow-credential")
         Future.value(r)
       }
+      // log stats and events
+      val logKey = "conversions"
+      ExternalResources.contentLengthFromHead(url, logKey)
+      Redis.storeEvent("conversion", url, "user@example.com", req.remoteSocketAddress.toString)
+      Redis.logBytes(logKey, req.getLength())
+      Redis.increaseCounter(logKey)
       rep
     }
   }

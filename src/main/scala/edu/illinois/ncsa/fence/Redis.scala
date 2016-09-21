@@ -1,7 +1,7 @@
 package edu.illinois.ncsa.fence
 
 import _root_.java.lang.{Long => JLong}
-import java.util.UUID
+import java.util.{Calendar, UUID}
 
 import com.twitter.finagle.redis.util.{BufToString, BytesToString, StringToBuf, StringToChannelBuffer}
 import com.twitter.util.{Await, Future}
@@ -9,8 +9,9 @@ import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.redis.{Client, Redis}
+import com.twitter.finagle.redis.{Client, Redis, RedisClientPipelineFactory}
 import com.twitter.io.Buf
+import org.jboss.netty.buffer.ChannelBuffer
 
 import scala.util.{Failure, Success, Try}
 
@@ -24,7 +25,7 @@ object Redis {
   private val tokenNamespace = "token:"
   private val apiKeyNamespace = "key:"
   private val userNamespace = "user:"
-  private val counts = "counts:"
+  private val stats = "stats:"
   private val host = conf.getString("redis.host")+":"+conf.getString("redis.port")
 
 //  val redis = com.twitter.finagle.redis.Client(host)
@@ -94,11 +95,11 @@ object Redis {
       }
       return
     }
-    val maybeUser = redis.get(StringToChannelBuffer(apiKeyNamespace + key))
+    val maybeUser = redis.get(StringToBuf(apiKeyNamespace + key))
     maybeUser.flatMap { user =>
       user match {
         case Some(userId) =>
-          val id = BytesToString(userId.array())
+          val id = BufToString(userId)
           // remove key from user
           redis.sRem(StringToChannelBuffer(userNamespace + id + ":keys"),
             List(StringToChannelBuffer(key)))
@@ -125,11 +126,28 @@ object Redis {
   }
 
   def increaseCounter(counter: String) {
-    redis.incr(StringToBuf(counts+counter))
+    redis.incr(StringToBuf(stats+counter))
   }
 
   def logBytes(endpoint: String, length: Int): Unit = {
-    redis.incrBy(StringToBuf(counts+"bytes:"+endpoint), length)
+    redis.incrBy(StringToBuf(stats+"bytes:"+endpoint), length)
+  }
+
+  def storeEvent(eventType: String, resource: String, user: String, clientIP: String): Unit = {
+    val millis = System.currentTimeMillis()
+    val calendar = Calendar.getInstance()
+    calendar.setTimeInMillis(millis)
+    val id = UUID.randomUUID().toString
+    val fields = Map[ChannelBuffer, ChannelBuffer](
+      StringToChannelBuffer("type") -> StringToChannelBuffer(eventType),
+      StringToChannelBuffer("date") -> StringToChannelBuffer(millis.toString),
+      StringToChannelBuffer("resource") -> StringToChannelBuffer(resource),
+      StringToChannelBuffer("user") -> StringToChannelBuffer(user),
+      StringToChannelBuffer("clientIP") -> StringToChannelBuffer(clientIP)
+      )
+    log.debug(s"Logging event $eventType $resource at $calendar from $clientIP")
+    redis.hMSet(StringToChannelBuffer("events:"+id), fields)
+    redis.zAdd(StringToChannelBuffer("events"), millis.toDouble, StringToChannelBuffer(id))
   }
 
   def close(): Unit = {
