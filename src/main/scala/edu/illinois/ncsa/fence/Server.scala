@@ -13,7 +13,7 @@ import com.twitter.finagle.{Http, ListeningServer, Service, SimpleFilter}
 import com.twitter.server.TwitterServer
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
-import edu.illinois.ncsa.fence.Auth.AuthorizeToken
+import edu.illinois.ncsa.fence.Auth.{TokenFilter, AuthorizeToken}
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources}
@@ -46,7 +46,7 @@ object Server extends TwitterServer {
 
   val handleExceptions = new HandleExceptions
 
-  val authToken = new AuthorizeToken
+  val tokenFilter = new TokenFilter
 
   val userAuth: SimpleFilter[Request, Response] = conf.getString("auth.provider") match {
     case "crowd" =>
@@ -60,7 +60,7 @@ object Server extends TwitterServer {
       new CrowdAuthorizeUserPassword
   }
 
-  val authorizedDAP = authToken andThen polyglot
+  val authorizedDAP = tokenFilter andThen polyglot
 
   val okStats = statsReceiver.counter("everything-is-ok")
 
@@ -170,8 +170,9 @@ object Server extends TwitterServer {
       }
       log.debug("Uploaded bytes for extraction " +  req.getLength())
       // log stats and events
+      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
       val logKey = "extractions"
-      Redis.storeEvent("extraction", "file:///", "user@example.com", req.remoteSocketAddress.toString)
+      Redis.storeEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseCounter(logKey)
       rep
@@ -202,10 +203,11 @@ object Server extends TwitterServer {
       }
       log.debug("Uploaded bytes for extraction " +  req.getLength())
       // log stats and events
+      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
       val logKey = "extractions"
       val fileurl = Clowder.extractFileURL(req)
       ExternalResources.contentLengthFromHead(fileurl, logKey)
-      Redis.storeEvent("extraction", fileurl, "user@example.com", req.remoteSocketAddress.toString)
+      Redis.storeEvent("extraction", fileurl, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseCounter(logKey)
       rep
@@ -244,8 +246,9 @@ object Server extends TwitterServer {
       }
       log.debug("Uploaded bytes for conversion " +  req.getLength())
       // log events
+      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
       val logKey = "conversions"
-      Redis.storeEvent("conversion", "file:///", "user@example.com", req.remoteSocketAddress.toString)
+      Redis.storeEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
       Redis.increaseCounter(logKey)
       Redis.logBytes(logKey, req.getLength())
       rep
@@ -286,9 +289,10 @@ object Server extends TwitterServer {
         Future.value(r)
       }
       // log stats and events
+      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
       val logKey = "conversions"
       ExternalResources.contentLengthFromHead(url, logKey)
-      Redis.storeEvent("conversion", url, "user@example.com", req.remoteSocketAddress.toString)
+      Redis.storeEvent("conversion", url, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseCounter(logKey)
       rep
@@ -308,15 +312,22 @@ object Server extends TwitterServer {
 
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root) => redirect(conf.getString("docs.root"))
-    case (Get, Root / "dap" / "alive") => cors andThen authToken andThen polyglotCatchAll(Path("alive"))
-    case (_, Root / "dap" / "convert" / fileType / path) =>  cors andThen authToken andThen convertURL(fileType, path)
-    case (_, "dap" /: "convert" /: path) =>  cors andThen authToken andThen convertBytes("/convert" + path)
-    case (_, "dap" /: path) => cors andThen authToken andThen polyglotCatchAll(path)
-    case (Post, Root / "dts" / "api" / "files") => cors andThen authToken andThen extractBytes("/api/files")
-    case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cors andThen authToken andThen extractBytes("/api/files/" + fileId + "/extractions")
-    case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen authToken andThen extractBytes("/api/extractions/upload_file")
-    case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => cors andThen authToken andThen extractURL("/api/extractions/upload_url")
-    case (_, "dts" /: path) => cors andThen authToken andThen clowderCatchAll(path)
+    case (Get, Root / "dap" / "alive") => cors andThen tokenFilter andThen polyglotCatchAll(Path("alive"))
+    case (_, Root / "dap" / "convert" / fileType / path) =>  cors andThen tokenFilter andThen convertURL(fileType, path)
+    case (_, "dap" /: "convert" /: path) =>  cors andThen tokenFilter andThen convertBytes("/convert" + path)
+    case (_, "dap" /: path) => cors andThen tokenFilter andThen polyglotCatchAll(path)
+    case (Post, Root / "dts" / "api" / "files") => cors andThen tokenFilter andThen extractBytes("/api/files")
+    case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cors andThen
+      tokenFilter andThen
+      extractBytes("/api/files/" + fileId + "/extractions")
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen
+      tokenFilter andThen
+      extractBytes("/api/extractions/upload_file")
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_url") =>
+      cors andThen
+      tokenFilter andThen
+      extractURL("/api/extractions/upload_url")
+    case (_, "dts" /: path) => cors andThen tokenFilter andThen clowderCatchAll(path)
     case (Get, Root / "ok") => ok
     case (Post, Root / "keys") => cors andThen userAuth andThen Auth.createApiKey()
     case (Delete, Root / "keys" / key) => cors andThen userAuth andThen Auth.deleteApiKey(key)

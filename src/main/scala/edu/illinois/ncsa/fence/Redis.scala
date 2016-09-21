@@ -52,6 +52,24 @@ object Redis {
     redis.ttl(StringToBuf(tokenNamespace+token.toString))
   }
 
+  def getUser(token: UUID): Future[Option[String]] = {
+    val tokenBuf = StringToBuf(tokenNamespace+token.toString)
+    redis.get(tokenBuf).flatMap{
+      case Some(apiKeyBuf: Buf) =>
+        val apiKey = BufToString(apiKeyBuf)
+        val apiKeyRedisKey = StringToBuf(apiKeyNamespace + apiKey)
+        redis.get(apiKeyRedisKey).flatMap {
+          case Some(usernameBuf: Buf) =>
+            val user = BufToString(usernameBuf)
+            Future.value(Some(user))
+          case None =>
+            Future.value(None)
+        }
+      case None =>
+        Future.value(None)
+    }
+  }
+
   def deleteToken(token: UUID): Boolean = {
     // find key for token
     val maybeKey = redis.get(StringToBuf(tokenNamespace+token.toString))
@@ -145,9 +163,9 @@ object Redis {
       StringToChannelBuffer("user") -> StringToChannelBuffer(user),
       StringToChannelBuffer("clientIP") -> StringToChannelBuffer(clientIP)
       )
-    log.debug(s"Logging event $eventType $resource at $calendar from $clientIP")
     redis.hMSet(StringToChannelBuffer("events:"+id), fields)
     redis.zAdd(StringToChannelBuffer("events"), millis.toDouble, StringToChannelBuffer(id))
+    log.debug(s"Event $eventType on $resource at ${calendar.getTime} from $clientIP")
   }
 
   def close(): Unit = {

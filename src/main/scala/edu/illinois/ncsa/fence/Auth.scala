@@ -21,6 +21,8 @@ object Auth {
 
   val checkTokenStats = statsReceiver.counter("fence-check-access-token")
 
+  val usernameHeader = "X-BD-Username"
+
   def newAccessToken(key: UUID) = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
       Redis.getAPIKeyFuture(key.toString).flatMap { optBuf =>
@@ -158,6 +160,44 @@ object Auth {
                     }
                   case None => invalidToken()
                 }
+              }
+            } getOrElse invalidToken()
+        }
+      } catch {
+        case iae: IllegalArgumentException => {
+          log.error(s"Invalid token - $iae")
+          invalidToken()
+        }
+        case _ => invalidToken()
+      }
+    }
+
+    def invalidToken(): Future[Response] = {
+      val errorResponse = Response(Version.Http11, Status.Forbidden)
+      errorResponse.contentString = "Invalid token"
+      Future(errorResponse)
+    }
+  }
+
+  class TokenFilter() extends SimpleFilter[Request, Response] {
+
+    override def apply(request: Request, continue: Service[Request, Response]): Future[Response] = {
+      try {
+        request.headerMap.get(Fields.Authorization) match {
+          case Some(token) =>
+            Redis.getUser(UUID.fromString(token)) flatMap {
+                case Some(user) =>
+                    request.headerMap.add(usernameHeader, user)
+                    continue(request)
+                case None => invalidToken()
+              }
+          case None =>
+            request.params.get("token") map { token =>
+              Redis.getUser(UUID.fromString(token)) flatMap {
+                case Some(user) =>
+                  request.headerMap.add(usernameHeader, user)
+                  continue(request)
+                case None => invalidToken()
               }
             } getOrElse invalidToken()
         }
