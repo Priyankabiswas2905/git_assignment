@@ -39,7 +39,7 @@ def password(request):
 
 @pytest.fixture(scope="module")
 def timeout(request):
-    return request.config.getoption("--timeout")
+    return int(request.config.getoption("--timeout"))
 
 
 @pytest.fixture
