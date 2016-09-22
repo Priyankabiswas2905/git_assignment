@@ -19,6 +19,7 @@ import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUse
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import org.jboss.netty.handler.codec.http.{HttpRequest, HttpResponse}
 import scala.util.parsing.json.JSON
+import scala.util.parsing.json.JSONObject
 
 class HandleExceptions extends SimpleFilter[Request, Response] {
   def apply(request: Request, service: Service[Request, Response]) = {
@@ -229,19 +230,36 @@ object Server extends TwitterServer {
   def datawolfPath(path: String): Service[Request, Response] = {
     log.debug("Datawolf request")
     Service.mk { (req: Request) =>
-      val newReq = Request(Http11, Post, path, req.reader)
+      val prevBody = JSON.parseFull(req.contentString)
+      var bodyMap = scala.collection.immutable.Map[String, Any]()
       val fenceURL = conf.getString("fence.hostname")
+
+      // There is probably a better way to do this since there are warnings
+      prevBody match {
+        case Some(e:Map[String,Any]) => {
+          // Add fence url to the body arguments
+          bodyMap = e + ("fence" -> fenceURL)
+        }
+      }
+      
+      val newReq = Request(Http11, Post, path)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           newReq.headerMap.add(key, value)
         }
       }
+
+      val body = JSONObject(bodyMap).toString()
+      newReq.setContentString(body.toString())
+      newReq.headerMap.set(Fields.ContentLength, body.toString.length.toString)
+
       val rep = dw(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
         Future.value(r)
       }
+      rep
     }
   }
 
