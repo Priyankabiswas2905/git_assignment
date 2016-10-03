@@ -21,7 +21,7 @@ def main():
         errorlog = str()
 
         for testcase in doc['testsuite']['testcase']:
-            print testcase['@classname']
+            #print testcase['@classname']
             if 'failure' in testcase :
                 errorlog += (testcase['failure']['#text']) +'\n'
                 errorlog += '----------------------------------------------------\n'
