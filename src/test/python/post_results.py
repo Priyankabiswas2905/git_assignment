@@ -124,8 +124,6 @@ def report_email(host, total_tests, elapsed_time, log):
 def report_mongo(host, total_tests, elapsed_time, log):
     """Write the test results to mongo database"""
     if args.mongo_host and args.mongo_db and args.mongo_collection:
-        result = log.copy()
-        result.pop('success')
         document = {
             'host': host,
             'date': datetime.datetime.utcnow(),
@@ -138,7 +136,7 @@ def report_mongo(host, total_tests, elapsed_time, log):
                 'skipped': len(log['skipped']),
                 'success': len(log['success'])
             },
-            'results': result
+            'results': log
         }
         mc = MongoClient(args.mongo_host)
         db = mc[args.mongo_db]
