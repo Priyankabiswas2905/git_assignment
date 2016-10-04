@@ -316,15 +316,13 @@ object Server extends TwitterServer {
     log.debug("Datawolf request")
     Service.mk { (req: Request) =>
       val prevBody = JSON.parseFull(req.contentString)
-      var bodyMap = scala.collection.immutable.Map[String, Any]()
       val fenceURL = conf.getString("fence.hostname")
 
       // There is probably a better way to do this since there are warnings
-      prevBody match {
-        case Some(e:Map[String,Any]) => {
-          // Add fence url to the body arguments
-          bodyMap = e + ("fence" -> fenceURL)
-        }
+      val bodyMap = prevBody match {
+        // Add fence url to the body arguments
+        case Some(e: Map[String,Any]) => JSONObject(e + ("fence" -> fenceURL))
+        case _ => prevBody
       }
       
       val newReq = Request(Http11, Post, path)
@@ -334,9 +332,10 @@ object Server extends TwitterServer {
         }
       }
 
-      val body = JSONObject(bodyMap).toString()
-      newReq.setContentString(body.toString())
+      val body = bodyMap.toString()
+      newReq.setContentString(body)
       newReq.headerMap.set(Fields.ContentLength, body.toString.length.toString)
+      newReq.headerMap.set(Fields.Host, conf.getString("dw.url"))
 
       val rep = dw(newReq)
       rep.flatMap { r =>
@@ -375,7 +374,7 @@ object Server extends TwitterServer {
     case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
-    case (Post, Root / "dw" / "provenance") => cors andThen tokenFilter andThen datawolfPath("/datawolf/browndog/provenance")
+    case (Post, Root / "dw" / "provenance") => cors andThen tokenFilter andThen datawolfPath("/browndog/provenance")
     case _ => notFound
   }
 
