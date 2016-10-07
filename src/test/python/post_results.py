@@ -1,10 +1,13 @@
 import xmltodict
-from pymongo import MongoClient
 import datetime
-from smtplib import SMTP
 import argparse
 import ruamel.yaml
 import socket
+
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from pymongo import MongoClient
+from smtplib import SMTP
 
 
 def main():
@@ -22,10 +25,12 @@ def main():
             logmsg['time'] = float(testcase['@time'])
             if 'error' in testcase:
                 msgtype = 'errors'
-                logmsg['message'] = testcase['error']['#text']
+                logmsg['message'] = testcase['error']['@message']
+                logmsg['trace'] = testcase['error']['#text']
             elif 'failure' in testcase:
                 msgtype = 'failures'
-                logmsg['message'] = testcase['failure']['#text']
+                logmsg['message'] = testcase['failure']['@message']
+                logmsg['trace'] = testcase['failure']['#text']
             elif 'skipped' in testcase:
                 msgtype = 'skipped'
                 logmsg['message'] = testcase['skipped']['@message']
@@ -33,6 +38,8 @@ def main():
                 msgtype = 'success'
             if 'system-out' in testcase:
                 logmsg['system-out'] = testcase['system-out']
+            if 'system-err' in testcase:
+                logmsg['system-err'] = testcase['system-err']
             log[msgtype].append(logmsg)
 
         report_console(host, total_tests, elapsed_time, log)
@@ -82,42 +89,67 @@ def report_email(host, total_tests, elapsed_time, log):
             else:
                 email_addresses = [r['address'] for r in recipients if r['get_success'] is True]
 
-            headers = 'From: "%s" <devnull@ncsa.illinois.edu>\n' % host
-            headers += "To: %s\n" % ', '.join(email_addresses)
-            if failure:
-                headers += "Subject: [%s] Brown Dog Tests Failures\n" % args.server
-            else:
-                headers += "Subject: [%s] Brown Dog Tests Successful\n" % args.server
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = "[%s] Brown Dog Tests Failures" % args.server
+            msg['From'] = '"%s" <devnull@ncsa.illinois.edu>' % host
+            msg['To'] = ', '.join(email_addresses)
 
-            body = ""
-            body += "Host         : %s\n" % host
-            body += "Total Tests  : %d\n" % total_tests
-            body += "Failures     : %d\n" % len(log['failures'])
-            body += "Errors       : %d\n" % len(log['errors'])
-            body += "Skipped      : %d\n" % len(log['skipped'])
-            body += "Success      : %d\n" % len(log['success'])
-            body += "Elapsed time : %5.2f seconds\n" % elapsed_time
+            # Plain Text version of the email message
+            text = ""
+            text += "Host         : %s\n" % host
+            text += "Total Tests  : %d\n" % total_tests
+            text += "Failures     : %d\n" % len(log['failures'])
+            text += "Errors       : %d\n" % len(log['errors'])
+            text += "Skipped      : %d\n" % len(log['skipped'])
+            text += "Success      : %d\n" % len(log['success'])
+            text += "Elapsed time : %5.2f seconds\n" % elapsed_time
             if len(log['failures']) > 0:
-                body += '++++++++++++++++++++++++++++ FAILURES ++++++++++++++++++++++++++++++++\n'
+                text += '++++++++++++++++++++++++++++ FAILURES ++++++++++++++++++++++++++++++++\n'
                 for logmsg in log['failures']:
-                    body += logmsg_str(logmsg)
+                    text += logmsg_str(logmsg)
             if len(log['errors']) > 0:
-                body += '++++++++++++++++++++++++++++ ERRORS ++++++++++++++++++++++++++++++++++\n'
+                text += '++++++++++++++++++++++++++++ ERRORS ++++++++++++++++++++++++++++++++++\n'
                 for logmsg in log['errors']:
-                    body += logmsg_str(logmsg)
+                    text += logmsg_str(logmsg)
             if len(log['skipped']) > 0:
-                body += '++++++++++++++++++++++++++++ SKIPPED +++++++++++++++++++++++++++++++++\n'
+                text += '++++++++++++++++++++++++++++ SKIPPED +++++++++++++++++++++++++++++++++\n'
                 for logmsg in log['skipped']:
-                    body += logmsg_str(logmsg)
+                    text += logmsg_str(logmsg)
             # if len(log['success']) > 0:
             #    body += '++++++++++++++++++++++++++++ SUCCESS +++++++++++++++++++++++++++++++++\n'
             #    for logmsg in log['success']:
             #        body += logmsg_str(logmsg)
+            msg.attach(MIMEText(text, 'plain'))
 
-            message = "%s\n%s" % (headers, body)
+            # HTML version of the email message
+            text = "<html><head></head><body>\n"
+            text += "<table border=0>\n"
+            text += "<tr><th align='left'>Host</th><td>%s</td></tr>\n" % host
+            text += "<tr><th align='left'>Total Tests</th><td>%d</td></tr>\n" % total_tests
+            text += "<tr><th align='left'>Failures</th><td>%d</td></tr>\n" % len(log['failures'])
+            text += "<tr><th align='left'>Errors</th><td>%d</td></tr>\n" % len(log['errors'])
+            text += "<tr><th align='left'>Skipped</th><td>%d</td></tr>\n" % len(log['skipped'])
+            text += "<tr><th align='left'>Success</th><td>%d</td></tr>\n" % len(log['success'])
+            text += "<tr><th align='left'>Elapsed time</th><td>%5.2f seconds</td></tr>\n" % elapsed_time
+            text += "</table>\n"
+            if len(log['failures']) > 0:
+                text += '<h2>FAILURES</h2>\n'
+                for logmsg in log['failures']:
+                    text += logmsg_html(logmsg)
+            if len(log['errors']) > 0:
+                text += '<h2>ERRORS</h2>\n'
+                for logmsg in log['errors']:
+                    text += logmsg_html(logmsg)
+            if len(log['skipped']) > 0:
+                text += '<h2>SKIPPED</h2>\n'
+                for logmsg in log['skipped']:
+                    text += logmsg_html(logmsg)
+            text += "</body></html>"
+            msg.attach(MIMEText(text, 'html'))
+
+            # send the actual message
             mailserver = SMTP(args.mailserver)
-            for watcher in email_addresses:
-                mailserver.sendmail('', watcher, message)
+            mailserver.sendmail(msg['From'], email_addresses, msg.as_string())
             mailserver.quit()
 
 
@@ -151,8 +183,29 @@ def logmsg_str(logmsg):
     if 'message' in logmsg:
         result += "Message    : %s\n" % logmsg['message']
     if 'system-out' in logmsg:
-        result += "system out : %s\n" % logmsg['system-out']
+        result += "system out :\n%s\n" % logmsg['system-out']
+    if 'system-err' in logmsg:
+        result += "system err :\n%s\n" % logmsg['system-err']
     result += "----------------------------------------------------------------------\n"
+    return result
+
+
+def logmsg_html(logmsg):
+    result = "<table border=0>\n"
+    result += "<tr><th align='left'>Name</th><td>%s</td></tr>\n" % logmsg['name']
+    result += "<tr><th align='left'>Classname</th><td>%s</td></tr>\n" % logmsg['classname']
+    result += "<tr><th align='left'>Time</th><td>%5.2f seconds</td></tr>\n" % logmsg['time']
+    if 'message' in logmsg:
+        text = logmsg['message'].replace("\n", "<br/>\n")
+        result += "<tr><th align='left' valign='top'>Message</th><td>%s</td></tr>\n" % text
+    if 'system-out' in logmsg:
+        text = logmsg['system-out'].replace("\n", "<br/>\n")
+        result += "<tr><th align='left' valign='top'>System Out</th><td>%s</td></tr>\n" % text
+    if 'system-err' in logmsg:
+        text = logmsg['system-err'].replace("\n", "<br/>\n")
+        result += "<tr><th align='left' valign='top'>System Err</th><td>%s</td></tr>\n" % text
+    result += "</table>\n"
+    result += "<hr/>"
     return result
 
 
