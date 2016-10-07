@@ -82,16 +82,20 @@ def report_email(host, total_tests, elapsed_time, log):
     if args.mailserver:
         with open("watchers.yml", 'r') as f:
             recipients = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
-            failure = len(log['failures']) > 0 or len(log['failures']) > 0
+            msg = MIMEMultipart('alternative')
 
-            if failure:
+            msg['From'] = '"%s" <devnull@ncsa.illinois.edu>' % host
+
+            if len(log['failures']) > 0 or len(log['errors']) > 0:
                 email_addresses = [r['address'] for r in recipients if r['get_failure'] is True]
+                msg['Subject'] = "[%s] Brown Dog Tests Failures" % args.server
+            elif len(log['skipped']) > 0:
+                email_addresses = [r['address'] for r in recipients if r['get_success'] is True]
+                msg['Subject'] = "[%s] Brown Dog Tests Skipped" % args.server
             else:
                 email_addresses = [r['address'] for r in recipients if r['get_success'] is True]
+                msg['Subject'] = "[%s] Brown Dog Tests Success" % args.server
 
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = "[%s] Brown Dog Tests Failures" % args.server
-            msg['From'] = '"%s" <devnull@ncsa.illinois.edu>' % host
             msg['To'] = ', '.join(email_addresses)
 
             # Plain Text version of the email message
