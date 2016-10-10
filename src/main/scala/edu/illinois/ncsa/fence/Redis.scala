@@ -3,14 +3,15 @@ package edu.illinois.ncsa.fence
 import _root_.java.lang.{Long => JLong}
 import java.util.{Calendar, UUID}
 
+import com.twitter.conversions.time._
+import com.twitter.finagle.builder.ClientBuilder
+import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.util.{BufToString, BytesToString, StringToBuf, StringToChannelBuffer}
+import com.twitter.io.Buf
 import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
-import com.twitter.conversions.time._
-import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.redis.{Client, Redis, RedisClientPipelineFactory}
-import com.twitter.io.Buf
+import edu.illinois.ncsa.fence.models.{BytesStats, Stats}
 import org.jboss.netty.buffer.ChannelBuffer
 
 import scala.util.{Failure, Success, Try}
@@ -73,7 +74,7 @@ object Redis {
   def deleteToken(token: UUID): Boolean = {
     // find key for token
     val maybeKey = redis.get(StringToBuf(tokenNamespace+token.toString))
-    maybeKey.flatMap{someKey =>
+    maybeKey.flatMap { someKey =>
       someKey match {
         case Some(k) =>
           val key = BufToString(k)
@@ -166,6 +167,31 @@ object Redis {
     redis.hMSet(StringToChannelBuffer("events:"+id), fields)
     redis.zAdd(StringToChannelBuffer("events"), millis.toDouble, StringToChannelBuffer(id))
     log.debug(s"Event $eventType on $resource at ${calendar.getTime} from $clientIP")
+  }
+
+
+  /**
+    * Get global activity statistics.
+    * @return A string with the encoded json document in it.
+    */
+  def getStats(): Future[Stats] = {
+    val statsRedis = redis.mGet(Seq(
+      StringToBuf(stats+"bytes:conversions"),
+      StringToBuf(stats+"bytes:extractions"),
+      StringToBuf(stats+"conversions"),
+      StringToBuf(stats+"extractions"),
+      StringToBuf(stats+"keys"),
+      StringToBuf(stats+"tokens")
+    ))
+    statsRedis.map { s =>
+      val conversionsBytes = BufToString(s(0).getOrElse(Buf.Empty)).toInt
+      val extractionBytes = BufToString(s(1).getOrElse(Buf.Empty)).toInt
+      val conversionsNum = BufToString(s(2).getOrElse(Buf.Empty)).toInt
+      val extractionsNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
+      val keysNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
+      val tokensNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
+      Stats(BytesStats(conversionsBytes, extractionBytes), conversionsNum, extractionsNum, keysNum, tokensNum)
+    }
   }
 
   def close(): Unit = {

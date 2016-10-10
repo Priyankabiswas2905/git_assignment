@@ -13,10 +13,10 @@ import com.twitter.finagle.{Http, ListeningServer, Service, SimpleFilter}
 import com.twitter.server.TwitterServer
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
-import edu.illinois.ncsa.fence.Auth.{TokenFilter, AuthorizeToken}
+import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
-import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources}
+import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, Jackson}
 
 class HandleExceptions extends SimpleFilter[Request, Response] {
   def apply(request: Request, service: Service[Request, Response]) = {
@@ -299,10 +299,23 @@ object Server extends TwitterServer {
     }
   }
 
+  def stats(): Service[Request, Response] = {
+    log.debug("Returning Statistics ")
+    Service.mk { (req: Request) =>
+      Redis.getStats().flatMap { statistics =>
+        val json = Jackson.stringToJSON(statistics)
+        val r = Response()
+        r.setContentTypeJson()
+        r.setContentString(json)
+        Future.value(r)
+      }
+    }
+  }
+
   def redirect(location: String): Service[Request, Response] = {
     log.debug("Redirecting to " + location)
     Service.mk { (req: Request) =>
-      val r = Response.apply(Http11, Status.MovedPermanently)
+      val r = Response(Http11, Status.MovedPermanently)
       r.headerMap.set(Fields.Location, location)
       Future.value(r)
     }
@@ -335,6 +348,7 @@ object Server extends TwitterServer {
     case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
+    case (Get, Root / "stats") => cors andThen stats()
     case _ => notFound
   }
 
