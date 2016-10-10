@@ -62,6 +62,7 @@ def api_key(host, username, password):
     url = host + '/keys/'
     print("POST " + url)
     r = requests.post(url, auth=(username, password))
+    r.raise_for_status()
     print(r.text)
     key = r.json()['api-key']
     return key
@@ -72,6 +73,7 @@ def api_token(host, username, password, api_key):
     url = host + '/keys/' + api_key + '/tokens'
     print("POST " + url)
     r = requests.post(url, auth=(username, password))
+    r.raise_for_status()
     print(r.text)
     token = r.json()['token']
     return token
@@ -80,12 +82,16 @@ def api_token(host, username, password, api_key):
 def pytest_generate_tests(metafunc):
     if 'conversion_data' in metafunc.fixturenames:
         with open("test_conversion_data.yml", 'r') as f:
-            Iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
-            metafunc.parametrize('conversion_data', [i for i in Iterations])
+            iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
+            metafunc.parametrize('conversion_data', [i for i in iterations], ids=id_function)
     if 'extraction_data' in metafunc.fixturenames:
         with open("test_extraction_data.yml", 'r') as f:
-            Iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
-            metafunc.parametrize('extraction_data', [i for i in Iterations])
+            iterations = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
+            metafunc.parametrize('extraction_data', [i for i in iterations], ids=id_function)
+
+
+def id_function(val):
+    return val['description']
 
 
 def download_file(url, filename, api_token, wait):
