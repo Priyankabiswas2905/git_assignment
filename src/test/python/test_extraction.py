@@ -12,7 +12,7 @@ def test_get_extract(host, api_token, timeout, extraction_data):
     endpoint = host + '/dts/api'
     input_url = extraction_data['file_url']
     output = extraction_data['output']
-    metadata = extract_by_url(endpoint, api_token, input_url, int(timeout))
+    metadata = extract_by_url(endpoint, api_token, input_url, timeout)
     print("Extraction output " + metadata)
     if output.startswith("http://"):
         output = urllib2.urlopen(output).read().strip()
