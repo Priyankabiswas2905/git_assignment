@@ -16,6 +16,7 @@ import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
+import edu.illinois.ncsa.fence.models.Stats
 import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, Jackson}
 
 class HandleExceptions extends SimpleFilter[Request, Response] {
@@ -299,11 +300,56 @@ object Server extends TwitterServer {
     }
   }
 
+  /**
+    * Return global statistics about the service. See [[Stats]] for the full list.
+    *
+    * @return Json document including all global statistics
+    */
   def stats(): Service[Request, Response] = {
-    log.debug("Returning Statistics ")
+    log.debug("Returning statistics ")
     Service.mk { (req: Request) =>
       Redis.getStats().flatMap { statistics =>
         val json = Jackson.stringToJSON(statistics)
+        val r = Response()
+        r.setContentTypeJson()
+        r.setContentString(json)
+        Future.value(r)
+      }
+    }
+  }
+
+  /**
+    * List all events. A time interval can be specified by providing a starting time as milliseconds from UNIX epoch.
+    * The "since" parameters specifies the starting time. The "until" parameters specifies the end time.
+    *
+    * @return Json array of matching events.
+    */
+  def events(): Service[Request, Response] = {
+    log.debug("Get multiple events ")
+    Service.mk { (req: Request) =>
+      val since = req.params.get("since")
+      val until = req.params.get("until")
+      Redis.getEvents(since, until).flatMap { events =>
+        val json = Jackson.stringToJSON(events)
+        val r = Response()
+        r.setContentTypeJson()
+        r.setContentString(json)
+        Future.value(r)
+      }
+    }
+  }
+
+  /**
+    * Return an event by event id.
+    *
+    * @param eventId a string used internally to identify the event
+    * @return Json document representing the specific event
+    */
+  def event(eventId: String): Service[Request, Response] = {
+    log.debug("Get event")
+    Service.mk { (req: Request) =>
+      Redis.getEvent(eventId).flatMap { event =>
+        val json = Jackson.stringToJSON(event)
         val r = Response()
         r.setContentTypeJson()
         r.setContentString(json)
@@ -348,6 +394,8 @@ object Server extends TwitterServer {
     case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
+    case (Get, Root / "events" / eventId) => cors andThen tokenFilter andThen event(eventId)
+    case (Get, Root / "events") => cors andThen tokenFilter andThen events()
     case (Get, Root / "stats") => cors andThen stats()
     case _ => notFound
   }

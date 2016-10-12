@@ -5,13 +5,15 @@ import java.util.{Calendar, UUID}
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
+import com.twitter.finagle.netty3.ChannelBufferBuf
 import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.util.{BufToString, BytesToString, StringToBuf, StringToChannelBuffer}
+import com.twitter.finagle.redis.protocol.ZInterval
+import com.twitter.finagle.redis.util._
 import com.twitter.io.Buf
 import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
-import edu.illinois.ncsa.fence.models.{BytesStats, Stats}
+import edu.illinois.ncsa.fence.models.{BytesStats, Event, Stats}
 import org.jboss.netty.buffer.ChannelBuffer
 
 import scala.util.{Failure, Success, Try}
@@ -27,6 +29,7 @@ object Redis {
   private val apiKeyNamespace = "key:"
   private val userNamespace = "user:"
   private val stats = "stats:"
+  private val eventNamespace = "event:"
   private val host = conf.getString("redis.host")+":"+conf.getString("redis.port")
 
 //  val redis = com.twitter.finagle.redis.Client(host)
@@ -164,15 +167,18 @@ object Redis {
       StringToChannelBuffer("user") -> StringToChannelBuffer(user),
       StringToChannelBuffer("clientIP") -> StringToChannelBuffer(clientIP)
       )
-    redis.hMSet(StringToChannelBuffer("events:"+id), fields)
-    redis.zAdd(StringToChannelBuffer("events"), millis.toDouble, StringToChannelBuffer(id))
+    // add event to hash
+    redis.hMSet(StringToChannelBuffer(eventNamespace+id), fields)
+    // add event id to sorted set ordered by date
+    redis.zAdd(StringToChannelBuffer("events"), millis.toDouble, StringToChannelBuffer(eventNamespace+id))
     log.debug(s"Event $eventType on $resource at ${calendar.getTime} from $clientIP")
   }
 
 
   /**
     * Get global activity statistics.
-    * @return A string with the encoded json document in it.
+    *
+    * @return a new Stats instance
     */
   def getStats(): Future[Stats] = {
     val statsRedis = redis.mGet(Seq(
@@ -191,6 +197,50 @@ object Redis {
       val keysNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
       val tokensNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
       Stats(BytesStats(conversionsBytes, extractionBytes), conversionsNum, extractionsNum, keysNum, tokensNum)
+    }
+  }
+
+  /**
+    * Get events.
+    *
+    * @return a list of Events instances
+    */
+  def getEvents(since: Option[String], until: Option[String]): Future[Seq[Map[String, String]]] = {
+    //    redis.keys(StringToBuf(eventsNamespace+"*")).flatMap { keys =>
+    val start = if (since.isEmpty) ZInterval("-inf") else ZInterval(since.get)
+    val end = if (until.isEmpty) ZInterval("+inf") else ZInterval(until.get)
+    redis.zRangeByScore(StringToChannelBuffer("events"),
+      start, end, false, None).flatMap {
+      case Left(keys) =>
+        Future.Nil
+      case Right(keys) =>
+        log.debug(keys.size + " events between" + start + " and " + end)
+        val allFutures = keys.map(key => getEvent(key))
+        Future.collect(allFutures)
+    }
+  }
+
+  /**
+    * Get an event by event id.
+    *
+    * @param eventId
+    * @return the event as a Future of a Map of Strings
+    */
+  def getEvent(eventId: String): Future[Map[String, String]] = {
+    val id = StringToChannelBuffer(eventNamespace + eventId)
+    getEvent(id)
+  }
+
+  /**
+    * Private method to get an event by event Id as a ChannelBuffer.
+    *
+    * @param eventId
+    * @return events as a Future of a Map of Strings
+    */
+  private def getEvent(eventId: ChannelBuffer): Future[Map[String, String]] = {
+    redis.hGetAll(eventId).flatMap { hash =>
+      val map: Map[String, String] = hash.map(t => CBToString(t._1) -> CBToString(t._2))(collection.breakOut)
+      Future.value(map)
     }
   }
 
