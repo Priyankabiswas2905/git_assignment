@@ -18,6 +18,8 @@ import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUse
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import edu.illinois.ncsa.fence.models.Stats
 import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, Jackson}
+import scala.util.parsing.json.JSON
+import scala.util.parsing.json.JSONObject
 
 class HandleExceptions extends SimpleFilter[Request, Response] {
   def apply(request: Request, service: Service[Request, Response]) = {
@@ -44,6 +46,8 @@ object Server extends TwitterServer {
   val polyglot: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dap.url"))
 
   val clowder: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dts.url"))
+
+  val dw: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dw.url"))
 
   val handleExceptions = new HandleExceptions
 
@@ -367,6 +371,41 @@ object Server extends TwitterServer {
     }
   }
 
+  def datawolfPath(path: String): Service[Request, Response] = {
+    log.debug("Datawolf request")
+    Service.mk { (req: Request) =>
+      val prevBody = JSON.parseFull(req.contentString)
+      val fenceURL = conf.getString("fence.hostname")
+
+      // There is probably a better way to do this since there are warnings
+      val bodyMap = prevBody match {
+        // Add fence url to the body arguments
+        case Some(e: Map[String,Any]) => JSONObject(e + ("fence" -> fenceURL))
+        case _ => prevBody
+      }
+
+      val newReq = Request(Http11, Post, path)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          newReq.headerMap.add(key, value)
+        }
+      }
+
+      val body = bodyMap.toString()
+      newReq.setContentString(body)
+      newReq.headerMap.set(Fields.ContentLength, body.toString.length.toString)
+      newReq.headerMap.set(Fields.Host, conf.getString("dw.url"))
+
+      val rep = dw(newReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
+    }
+  }
+
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
 
   val router = RoutingService.byMethodAndPathObject[Request] {
@@ -397,6 +436,7 @@ object Server extends TwitterServer {
     case (Get, Root / "events" / eventId) => cors andThen tokenFilter andThen event(eventId)
     case (Get, Root / "events") => cors andThen tokenFilter andThen events()
     case (Get, Root / "stats") => cors andThen stats()
+    case (Post, Root / "dw" / "provenance") => cors andThen tokenFilter andThen datawolfPath("/browndog/provenance")
     case _ => notFound
   }
 
