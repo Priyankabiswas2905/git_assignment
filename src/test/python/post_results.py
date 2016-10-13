@@ -90,7 +90,7 @@ def report_console(host, total_tests, elapsed_time, log):
 
 def report_email(host, total_tests, elapsed_time, log):
     if args.mailserver:
-        with open("watchers.yml", 'r') as f:
+        with open(args.watchers, 'r') as f:
             recipients = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
             msg = MIMEMultipart('alternative')
 
@@ -232,6 +232,7 @@ if __name__ == '__main__':
     parser.add_argument("--mailserver", help="mail server to send update emails out")
     parser.add_argument("--console", action='store_true', help="should output goto console")
     parser.add_argument("--server", default="prod", choices=["DEV", "PROD"], type=str.upper, help="test type")
+    parser.add_argument("--watchers", default="watchers.yml", help="watchers to send email to")
     args = parser.parse_args()
     # print args.echo
     main()
