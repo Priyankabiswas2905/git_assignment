@@ -1,8 +1,9 @@
-import xmltodict
-import datetime
 import argparse
+import datetime
+import re
 import ruamel.yaml
 import socket
+import xmltodict
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -40,6 +41,15 @@ def main():
                 logmsg['system-out'] = testcase['system-out']
             if 'system-err' in testcase:
                 logmsg['system-err'] = testcase['system-err']
+
+            # cleanup of message, see also:
+            # http://stackoverflow.com/questions/40012526/junitxml-and-pytest-difference-in-message-when-running-in-parallel
+            if 'message' in logmsg:
+                msg = logmsg['message']
+                if 'AssertionError: ' in msg:
+                    logmsg['message'] = re.sub(r".*E +(AssertionError: .*) E +assert.*", r"\1", msg)
+                if 'HTTPError: ' in logmsg['message']:
+                    logmsg['message'] = re.sub(r".*E +(HTTPError: .*)  [^ ]*: HTTPError.*", r"\1", msg)
             log[msgtype].append(logmsg)
 
         report_console(host, total_tests, elapsed_time, log)
