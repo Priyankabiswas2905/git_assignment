@@ -68,7 +68,7 @@
   output_type: mp4
 -
   description: PGM to JPG
-  file_url: https://orion.math.iastate.edu/burkardt/data/pgm/balloons.pgm
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/balloons.ascii.pgm
   output_type: jpg
 -
   description: SVG to JPG
