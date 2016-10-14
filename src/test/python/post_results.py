@@ -45,21 +45,31 @@ def main():
             # cleanup of message, see also:
             # http://stackoverflow.com/questions/40012526/junitxml-and-pytest-difference-in-message-when-running-in-parallel
             if 'message' in logmsg:
-                msg = logmsg['message']
                 if 'AssertionError: ' in msg:
-                    logmsg['message'] = re.sub(r".*E +(AssertionError: .*) E +assert.*", r"\1", msg)
+                    logmsg['message'] = re.sub(r".*E +(AssertionError: .*) E +assert.*", r"\1", logmsg['message'])
                 if 'HTTPError: ' in logmsg['message']:
-                    logmsg['message'] = re.sub(r".*E +(HTTPError: .*)  [^ ]*: HTTPError.*", r"\1", msg)
+                    logmsg['message'] = re.sub(r".*E +(HTTPError: .*)  [^ ]*: HTTPError.*", r"\1", logmsg['message'])
+
+            # hide some private information
+            if 'system-out' in logmsg:
+                logmsg['system-out'] = re.sub(r"api_token = '[^']*'", "api_token = 'token'", logmsg['system-out'])
+            if 'system-err' in logmsg:
+                logmsg['system-err'] = re.sub(r"api_token = '[^']*'", "api_token = 'token'", logmsg['system-err'])
+            if 'trace' in logmsg:
+                logmsg['trace'] = re.sub(r"api_token = '[^']*'", "api_token = 'token'", logmsg['trace'])
+
             log[msgtype].append(logmsg)
 
-        report_console(host, total_tests, elapsed_time, log)
-        report_email(host, total_tests, elapsed_time, log)
-        report_mongo(host, total_tests, elapsed_time, log)
+        mongoid = report_mongo(host, total_tests, elapsed_time, log)
+        report_console(host, total_tests, elapsed_time, log, mongoid)
+        report_email(host, total_tests, elapsed_time, log, mongoid)
 
 
-def report_console(host, total_tests, elapsed_time, log):
+def report_console(host, total_tests, elapsed_time, log, mongoid):
     if args.console:
         message = ""
+        if args.url and mongoid:
+            message += "Report       : %s/report.html?id=%s\n" % (args.url, mongoid)
         message += "Host         : %s\n" % host
         message += "Server       : %s\n" % args.server
         message += "Total Tests  : %d\n" % total_tests
@@ -88,7 +98,7 @@ def report_console(host, total_tests, elapsed_time, log):
         print(message)
 
 
-def report_email(host, total_tests, elapsed_time, log):
+def report_email(host, total_tests, elapsed_time, log, mongoid):
     if args.mailserver:
         with open(args.watchers, 'r') as f:
             recipients = ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
@@ -110,6 +120,8 @@ def report_email(host, total_tests, elapsed_time, log):
 
             # Plain Text version of the email message
             text = ""
+            if args.url and mongoid:
+                text += "Report       : %s/report.html?id=%s\n" % (args.url, mongoid)
             text += "Host         : %s\n" % host
             text += "Total Tests  : %d\n" % total_tests
             text += "Failures     : %d\n" % len(log['failures'])
@@ -138,6 +150,9 @@ def report_email(host, total_tests, elapsed_time, log):
             # HTML version of the email message
             text = "<html><head></head><body>\n"
             text += "<table border=0>\n"
+            if args.url and mongoid:
+                text += "<tr><th align='left'>Report</th><td><a href='%s/report.html?id=%s'>%s</a></td></tr>\n" % \
+                        (args.url, mongoid, mongoid)
             text += "<tr><th align='left'>Host</th><td>%s</td></tr>\n" % host
             text += "<tr><th align='left'>Total Tests</th><td>%d</td></tr>\n" % total_tests
             text += "<tr><th align='left'>Failures</th><td>%d</td></tr>\n" % len(log['failures'])
@@ -187,7 +202,10 @@ def report_mongo(host, total_tests, elapsed_time, log):
         mc = MongoClient(args.mongo_host)
         db = mc[args.mongo_db]
         tests = db[args.mongo_collection]
-        tests.insert(document)
+        result = tests.insert_one(document)
+        return result.inserted_id
+    else:
+        return None
 
 
 def logmsg_str(logmsg):
@@ -233,6 +251,7 @@ if __name__ == '__main__':
     parser.add_argument("--console", action='store_true', help="should output goto console")
     parser.add_argument("--server", default="prod", choices=["DEV", "PROD"], type=str.upper, help="test type")
     parser.add_argument("--watchers", default="watchers.yml", help="watchers to send email to")
+    parser.add_argument("--url", default="", help="URL of place to find results")
     args = parser.parse_args()
     # print args.echo
     main()
