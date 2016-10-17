@@ -70,7 +70,7 @@
                 text += "<td align='right'>" + row['skipped'] + "</td>";
                 text += "<td align='right'>" + row['failures'] + "</td>";
                 text += "<td align='right'>" + row['errors'] + "</td>";
-                text += "<td><a href='result.html?id=" + row['id'] + "'>" + row['id'] + "</a></td>";
+                text += "<td><a href='report.html?id=" + row['id'] + "'>" + row['id'] + "</a></td>";
                 $('#results_body').append(text);
             });
         });

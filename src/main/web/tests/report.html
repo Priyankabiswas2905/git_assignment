@@ -39,18 +39,18 @@
             var result = results[0];
 
             div.append("<table border=0 cellpadding='10'><tbody>");
-            div.append("<tr><th align='left'>ID</th><td>" + result['id'] + "</td></tr>");
-            div.append("<tr><th align='left'>Server</th><td>" + result['server'] + "</td></tr>");
-            div.append("<tr><th align='left'>Date</th><td>" + new Date(result['date']) + "</td></tr>");
-            div.append("<tr><th align='left'>Total Tests</th><td>" + result['total'] + "</td></tr>\n");
-            div.append("<tr><th align='left'><a href='#failures'>Failures</a></th><td>" + result['failures'] + "</td></tr>");
-            div.append("<tr><th align='left'><a href='#errors'>Errors</a></th><td>" + result['errors'] + "</td></tr>");
-            div.append("<tr><th align='left'><a href='#skipped'>Skipped</a></th><td>" + result['skipped'] + "</td></tr>");
-            div.append("<tr><th align='left'><a href='#success'>Success<v/th><td>" + result['success']+ "</td></tr>");
-            div.append("<tr><th align='left'>Elapsed time</th><td>" + result['time'] + " seconds</td></tr>");
+            div.append("<tr><th align='left'>ID</th><td>" + report['id'] + "</td></tr>");
+            div.append("<tr><th align='left'>Server</th><td>" + report['server'] + "</td></tr>");
+            div.append("<tr><th align='left'>Date</th><td>" + new Date(report['date']) + "</td></tr>");
+            div.append("<tr><th align='left'>Total Tests</th><td>" + report['total'] + "</td></tr>\n");
+            div.append("<tr><th align='left'><a href='#failures'>Failures</a></th><td>" + report['failures'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#errors'>Errors</a></th><td>" + report['errors'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#skipped'>Skipped</a></th><td>" + report['skipped'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#success'>Success<v/th><td>" + report['success']+ "</td></tr>");
+            div.append("<tr><th align='left'>Elapsed time</th><td>" + report['time'] + " seconds</td></tr>");
             div.append("</tbody></table>");
 
-            var tests = result['results'];
+            var tests = report['results'];
             if (tests.hasOwnProperty('failures'))
                 render_section("Failures", tests['failures']);
             if (tests.hasOwnProperty('errors'))
