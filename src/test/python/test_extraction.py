@@ -1,12 +1,20 @@
-import requests
 import json
+import pytest
+import requests
 import time
 import urllib2
 
 
 # @pytest.mark.skip(reason="testing conversions")
 def test_get_extract(host, api_token, timeout, extraction_data):
-    print(extraction_data['description'])
+    # should this test be skipped
+    if 'skip' in extraction_data:
+        pytest.skip(extraction_data['skip'])
+
+    print("Description     :", extraction_data['description'])
+    print("Extracting from :", extraction_data['file_url'])
+    print("Expecting       :", extraction_data['output'])
+
     endpoint = host + '/dts/api'
     input_url = extraction_data['file_url']
     output = extraction_data['output']

@@ -55,6 +55,7 @@
   file_url: http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml
   output_type: clim
 -
+  skip: input file is too big
   description: Test audio conversion, FLAC to MP3
   file_url: http://browndog.ncsa.illinois.edu/examples/cache/Hallelujah.flac
   output_type: mp3
@@ -74,18 +75,16 @@
   description: SVG to JPG
   file_url: http://upload.wikimedia.org/wikipedia/commons/b/b0/NewTux.svg
   output_type: jpg
-#-
-#  description: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
-#  file_url: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
-#  output_type: stp
-#-
-#  description: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
-#  file_url: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
-#  output_type: obj
 -
-  description: FLAC to MP3
-  file_url: http://thesixteendigital.com.s3.amazonaws.com/testfiles/Hallelujah.flac
-  output_type: mp3
+  skip: no step convertor?
+  description: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
+  file_url: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
+  output_type: stp
+-
+  skip: no step convertor?
+  description: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
+  file_url: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
+  output_type: obj
 -
   description: MPG to MP4
   file_url: http://hubblesource.stsci.edu/sources/video/clips/details/images/grb_1.mpg

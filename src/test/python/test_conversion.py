@@ -3,7 +3,7 @@ import urllib
 from os.path import basename, splitext, getsize
 import os
 import os.path
-import sys
+import pytest
 import time
 
 from conftest import download_file
@@ -11,6 +11,10 @@ from conftest import download_file
 
 # @pytest.mark.skip(reason="testing extractions")
 def test_get_convert(host, api_token, timeout, conversion_data):
+    # should this test be skipped
+    if 'skip' in conversion_data:
+        pytest.skip(conversion_data['skip'])
+
     print("Description     :", conversion_data['description'])
     print("Converting from :", conversion_data['file_url'])
     print("Converting to   :", conversion_data['output_type'])
