@@ -49,14 +49,19 @@ def main():
                     logmsg['message'] = re.sub(r".*E +(AssertionError: .*) E +assert.*", r"\1", logmsg['message'])
                 if 'HTTPError: ' in logmsg['message']:
                     logmsg['message'] = re.sub(r".*E +(HTTPError: .*)  [^ ]*: HTTPError.*", r"\1", logmsg['message'])
+                if 'OSError: ' in logmsg['message']:
+                    logmsg['message'] = re.sub(r".*E +(OSError: .*)  [^ ]*: OSError.*", r"\1", logmsg['message'])
 
             # hide some private information
-            if 'system-out' in logmsg:
-                logmsg['system-out'] = re.sub(r"api_token = '[^']*'", "api_token = 'token'", logmsg['system-out'])
-            if 'system-err' in logmsg:
-                logmsg['system-err'] = re.sub(r"api_token = '[^']*'", "api_token = 'token'", logmsg['system-err'])
-            if 'trace' in logmsg:
-                logmsg['trace'] = re.sub(r"api_token = '[^']*'", "api_token = 'token'", logmsg['trace'])
+            for key in logmsg:
+                if 'username' in logmsg[key]:
+                    logmsg[key] = re.sub(r"username = '[^']*'", "username = 'username'", logmsg[key])
+                if 'password' in logmsg[key]:
+                    logmsg[key] = re.sub(r"password = '[^']*'", "password = 'password'", logmsg[key])
+                if 'api_key' in logmsg[key]:
+                    logmsg[key] = re.sub(r"api_key = '[^']*'", "api_key = 'api_key'", logmsg[key])
+                if 'api_token' in logmsg[key]:
+                    logmsg[key] = re.sub(r"api_token = '[^']*'", "api_token = 'api_token'", logmsg[key])
 
             log[msgtype].append(logmsg)
 
