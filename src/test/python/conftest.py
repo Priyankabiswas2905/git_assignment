@@ -60,22 +60,22 @@ def mongo_collection(request):
 @pytest.fixture(scope="module")
 def api_key(host, username, password):
     url = host + '/keys/'
-    print("POST " + url)
+    print("Getting key from : " + url)
     r = requests.post(url, auth=(username, password))
     r.raise_for_status()
-    print(r.text)
     key = r.json()['api-key']
+    assert key != ""
     return key
 
 
 @pytest.fixture(scope="module")
 def api_token(host, username, password, api_key):
     url = host + '/keys/' + api_key + '/tokens'
-    print("POST " + url)
+    print("Getting token from : " + url)
     r = requests.post(url, auth=(username, password))
     r.raise_for_status()
-    print(r.text)
     token = r.json()['token']
+    assert token != ""
     return token
 
 
