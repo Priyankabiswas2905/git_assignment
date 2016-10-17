@@ -9,6 +9,11 @@ def test_get_key(host, username, password, timeout):
     key = r.json()['api-key']
     assert key != "", "no key returned"
 
+    # delete key after tests are done
+    delete_key_url = host + '/keys/' + key
+    r_delete_key = requests.delete(delete_key_url, auth=(username, password))
+    r_delete_key.raise_for_status()
+
 
 def test_get_token(host, username, password, api_key, timeout):
     url = host + '/keys/' + api_key + '/tokens'

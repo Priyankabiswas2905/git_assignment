@@ -61,22 +61,40 @@ def mongo_collection(request):
 def api_key(host, username, password):
     url = host + '/keys/'
     print("Getting key from : " + url)
+
+    # generate key
     r = requests.post(url, auth=(username, password))
     r.raise_for_status()
     key = r.json()['api-key']
     assert key != ""
-    return key
+
+    # yield key back to rest of test(s)
+    yield key
+
+    # delete key after tests are done
+    delete_key_url = host + '/keys/' + key
+    r_delete_key = requests.delete(delete_key_url, auth=(username, password))
+    r_delete_key.raise_for_status()
 
 
 @pytest.fixture(scope="module")
 def api_token(host, username, password, api_key):
     url = host + '/keys/' + api_key + '/tokens'
     print("Getting token from : " + url)
+
+    # generate token
     r = requests.post(url, auth=(username, password))
     r.raise_for_status()
     token = r.json()['token']
     assert token != ""
-    return token
+
+    # yield token back to rest of test(s)
+    yield token
+
+    # delete token after tests are done
+    delete_token_url = host + '/tokens/' + token
+    r_delete_token = requests.delete(delete_token_url, auth=(username, password))
+    r_delete_token.raise_for_status()
 
 
 def pytest_generate_tests(metafunc):
