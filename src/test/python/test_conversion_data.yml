@@ -39,11 +39,11 @@
   file_url: http://browndog.ncsa.illinois.edu/examples/favicon.png
   output_type: xml
 -
-  description: Test 3D conversion, DXF to PDF and DXF to JPG
+  description: Test 3D conversion, DXF to PDF
   file_url: http://browndog.ncsa.illinois.edu/examples/plane.dxf
   output_type: pdf
 -
-  description: Test 3D conversion, DXF to PDF and DXF to JPG
+  description: Test 3D conversion, DXF to JPG
   file_url: http://browndog.ncsa.illinois.edu/examples/plane.dxf
   output_type: jpg
 -
@@ -56,6 +56,7 @@
   output_type: clim
 -
   description: Test audio conversion, FLAC to MP3
+  skip: File is to big for software server, software server takes to long to process
   file_url: http://browndog.ncsa.illinois.edu/examples/cache/Hallelujah.flac
   output_type: mp3
 -
@@ -71,38 +72,12 @@
   file_url: https://isda.ncsa.illinois.edu/browndog/data/balloons.ascii.pgm
   output_type: jpg
 -
-  description: SVG to JPG
-  file_url: http://upload.wikimedia.org/wikipedia/commons/b/b0/NewTux.svg
-  output_type: jpg
-#-
-#  description: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
-#  file_url: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
-#  output_type: stp
-#-
-#  description: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
-#  file_url: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
-#  output_type: obj
+  skip: commented out, to big/long does not work?
+  description: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
+  file_url: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
+  output_type: stp
 -
-  description: FLAC to MP3
-  file_url: http://thesixteendigital.com.s3.amazonaws.com/testfiles/Hallelujah.flac
-  output_type: mp3
--
-  description: MPG to MP4
-  file_url: http://hubblesource.stsci.edu/sources/video/clips/details/images/grb_1.mpg
-  output_type: mp4
--
-  description: FLV to MP4
-  file_url: http://www.fullimpactwebdesign.com/solutions/websiteDevelopment/videoGalleryWebsites/files/neilYoungNeedleAndTheDamageDone.flv
-  output_type: mp4
--
-  description: EPUB to TXT
-  file_url: https://epub-samples.googlecode.com/files/moby-dick-20120118.epub
-  output_type: txt
--
-  description: EPUB to PDF
-  file_url: https://epub-samples.googlecode.com/files/moby-dick-20120118.epub
-  output_type: pdf
--
-  description: DXF to PDF
-  file_url: https://wiki.csiamerica.com/download/attachments/2590320/sample%20solid%20-%20pyramid%20base.DXF
-  output_type: pdf
+  skip: commented out, to big/long does not work?
+  description: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
+  file_url: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
+  output_type: obj

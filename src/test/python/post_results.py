@@ -45,7 +45,7 @@ def main():
             # cleanup of message, see also:
             # http://stackoverflow.com/questions/40012526/junitxml-and-pytest-difference-in-message-when-running-in-parallel
             if 'message' in logmsg:
-                if 'AssertionError: ' in msg:
+                if 'AssertionError: ' in logmsg['message']:
                     logmsg['message'] = re.sub(r".*E +(AssertionError: .*) E +assert.*", r"\1", logmsg['message'])
                 if 'HTTPError: ' in logmsg['message']:
                     logmsg['message'] = re.sub(r".*E +(HTTPError: .*)  [^ ]*: HTTPError.*", r"\1", logmsg['message'])
@@ -54,13 +54,13 @@ def main():
 
             # hide some private information
             for key in logmsg:
-                if 'username' in logmsg[key]:
+                if 'username' in str(logmsg[key]):
                     logmsg[key] = re.sub(r"username = '[^']*'", "username = 'username'", logmsg[key])
-                if 'password' in logmsg[key]:
+                if 'password' in str(logmsg[key]):
                     logmsg[key] = re.sub(r"password = '[^']*'", "password = 'password'", logmsg[key])
-                if 'api_key' in logmsg[key]:
+                if 'api_key' in str(logmsg[key]):
                     logmsg[key] = re.sub(r"api_key = '[^']*'", "api_key = 'api_key'", logmsg[key])
-                if 'api_token' in logmsg[key]:
+                if 'api_token' in str(logmsg[key]):
                     logmsg[key] = re.sub(r"api_token = '[^']*'", "api_token = 'api_token'", logmsg[key])
 
             log[msgtype].append(logmsg)
@@ -96,10 +96,10 @@ def report_console(host, total_tests, elapsed_time, log, mongoid):
             message += "++++++++++++++++++++++++++++ SKIPPED +++++++++++++++++++++++++++++++++\n"
             for logmsg in log['skipped']:
                 message += logmsg_str(logmsg)
-        if len(log['success']) > 0:
-            message += "++++++++++++++++++++++++++++ SUCCESS +++++++++++++++++++++++++++++++++\n"
-            for logmsg in log['success']:
-                message += logmsg_str(logmsg)
+        # if len(log['success']) > 0:
+        #     message += "++++++++++++++++++++++++++++ SUCCESS +++++++++++++++++++++++++++++++++\n"
+        #     for logmsg in log['success']:
+        #         message += logmsg_str(logmsg)
         print(message)
 
 
