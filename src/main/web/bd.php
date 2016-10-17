@@ -1,23 +1,24 @@
 <?php
   $expand = isset($_REQUEST['expand']);
-  $limit  = isset($_REQUEST['limit']) ? $_REQUEST['limit'] : 20;
+  $limit  = isset($_REQUEST['limit']) ? intval($_REQUEST['limit']) : 20;
 
-  $query = array();
+  $filter = array();
   if (isset($_REQUEST['server'])) {
-    $query["server"] = strtoupper($_REQUEST['server']);
+    $filter["server"] = strtoupper($_REQUEST['server']);
   }
   if (isset($_REQUEST['since'])) {
-    $query["date"] = array("$gte" => $_REQUEST['since']);
+    $filter["date"] = array("$gte" => $_REQUEST['since']);
   }
   if (isset($_REQUEST['id'])) {
-    $query["_id"] = new MongoId($_REQUEST['id']);
+    $filter["_id"] = new MongoDB\BSON\ObjectID($_REQUEST['id']);
   }
 
-  $client = new MongoClient("mongodb://mongo.ncsa.illinois.edu:27017");
-  $collection = $client->browndog->test_results;
-  $cursor = $collection->find($query);
-  $cursor->sort(array('date' => -1));
-  $cursor->limit($limit);
+  $options = array("limit" => $limit, "sort" => array("date" => -1));
+
+  $manager = new MongoDB\Driver\Manager("mongodb://mongo.ncsa.illinois.edu:27017");
+  $query = new MongoDB\Driver\Query($filter, $options);
+  $cursor = $manager->executeQuery("browndog.test_results", $query);
+  $cursor->setTypeMap(['root' => 'array', 'document' => 'array', 'array' => 'array']);
 
   header('Content-Type: application/json');
 
@@ -29,11 +30,10 @@
     } else {
       print(",");
     }
-
     $date = $document["date"];
     echo '{';
     echo '"id": "' . $document["_id"] . '"';
-    echo ', "date": ' . (($date->sec * 1000) + ($date->usec / 1000));
+    echo ', "date": ' . $document["date"];#(($date->sec * 1000) + ($date->usec / 1000));
     echo ', "server": "' . $document['server'] . '"';
     echo ', "time": ' . $document['elapsed_time'];
     foreach ($document['tests'] as $k => $v) {
