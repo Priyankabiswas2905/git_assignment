@@ -27,6 +27,7 @@ def test_get_convert(host, api_token, timeout, conversion_data):
         else:
             output_filename = output_path + basename(r.text)
         filename = download_file(r.text, output_filename, api_token, 90)
+        assert os.path.isfile(filename), "File was not downloaded"
         print("Downloaded      :", filename)
         try:
             assert getsize(filename) != 0, "Resulting file is 0 bytes"

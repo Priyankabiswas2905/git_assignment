@@ -43,10 +43,10 @@
             div.append("<tr><th align='left'>Server</th><td>" + result['server'] + "</td></tr>");
             div.append("<tr><th align='left'>Date</th><td>" + new Date(result['date']) + "</td></tr>");
             div.append("<tr><th align='left'>Total Tests</th><td>" + result['total'] + "</td></tr>\n");
-            div.append("<tr><th align='left'>Failures</th><td>" + result['failures'] + "</td></tr>");
-            div.append("<tr><th align='left'>Errors</th><td>" + result['errors'] + "</td></tr>");
-            div.append("<tr><th align='left'>Skipped</th><td>" + result['skipped'] + "</td></tr>");
-            div.append("<tr><th align='left'>Success</th><td>" + result['success']+ "</td></tr>");
+            div.append("<tr><th align='left'><a href='#failures'>Failures</a></th><td>" + result['failures'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#errors'>Errors</a></th><td>" + result['errors'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#skipped'>Skipped</a></th><td>" + result['skipped'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#success'>Success<v/th><td>" + result['success']+ "</td></tr>");
             div.append("<tr><th align='left'>Elapsed time</th><td>" + result['time'] + " seconds</td></tr>");
             div.append("</tbody></table>");
 
@@ -66,7 +66,7 @@
         if (data.length == 0) return;
 
         var div = $('#result');
-        div.append("<h2>" + title + "</h2>");
+        div.append("<a name='" + title.toLowerCase() + "'><h2>" + title + "</a></h2>");
 
         $.each(data, function (i, row) {
             var text = "";
