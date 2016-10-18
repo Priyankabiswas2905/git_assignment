@@ -3,7 +3,6 @@ import requests
 
 def test_get_key(host, username, password, timeout):
     url = host + '/keys/'
-    print("POST " + url)
     r = requests.post(url, auth=(username, password), timeout=timeout)
     r.raise_for_status()
     key = r.json()['api-key']
@@ -17,7 +16,6 @@ def test_get_key(host, username, password, timeout):
 
 def test_get_token(host, username, password, api_key, timeout):
     url = host + '/keys/' + api_key + '/tokens'
-    print("POST " + url)
     r = requests.post(url, auth=(username, password), timeout=timeout)
     r.raise_for_status()
     token = r.json()['token']
@@ -27,7 +25,6 @@ def test_get_token(host, username, password, api_key, timeout):
 def test_delete_token(host, username, password, api_key, timeout):
     # get new token
     get_token_url = host + '/keys/' + api_key + '/tokens'
-    print("POST " + get_token_url)
     r_token = requests.post(get_token_url, auth=(username, password), timeout=timeout)
     r_token.raise_for_status()
     token = r_token.json()['token']
