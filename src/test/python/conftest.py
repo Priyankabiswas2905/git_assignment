@@ -59,10 +59,8 @@ def mongo_collection(request):
 
 @pytest.fixture(scope="module")
 def api_key(host, username, password):
-    url = host + '/keys/'
-    print("Getting key from : " + url)
-
     # generate key
+    url = host + '/keys/'
     r = requests.post(url, auth=(username, password))
     r.raise_for_status()
     key = r.json()['api-key']
@@ -79,10 +77,8 @@ def api_key(host, username, password):
 
 @pytest.fixture(scope="module")
 def api_token(host, username, password, api_key):
-    url = host + '/keys/' + api_key + '/tokens'
-    print("Getting token from : " + url)
-
     # generate token
+    url = host + '/keys/' + api_key + '/tokens'
     r = requests.post(url, auth=(username, password))
     r.raise_for_status()
     token = r.json()['token']
