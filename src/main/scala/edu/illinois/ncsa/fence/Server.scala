@@ -223,6 +223,16 @@ object Server extends TwitterServer {
     }
   }
 
+  def swagger(): Service[Request, Response] = {
+    log.debug("Swagger documentation")
+    Service.mk { (req: Request) =>
+      val r = Response()
+      val text = utils.Files.readResourceFile("/swagger.json")
+      r.setContentString(text)
+      Future.value(r)
+    }
+  }
+
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
 
   val router = RoutingService.byMethodAndPathObject[Request] {
@@ -242,6 +252,7 @@ object Server extends TwitterServer {
     case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
+    case (Get, Root / "swagger.json") => cors andThen swagger
     case _ => notFound
   }
 
