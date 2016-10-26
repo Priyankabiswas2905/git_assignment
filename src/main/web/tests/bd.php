@@ -20,6 +20,7 @@
   $cursor = $manager->executeQuery("browndog.test_results", $query);
   $cursor->setTypeMap(['root' => 'array', 'document' => 'array', 'array' => 'array']);
 
+  header("Access-Control-Allow-Origin: *");
   header('Content-Type: application/json');
 
   $first = true;

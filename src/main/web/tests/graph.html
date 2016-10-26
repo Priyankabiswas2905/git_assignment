@@ -4,21 +4,19 @@
 .line {
   fill: none;
   stroke: steelblue;
-  stroke-width: 1.5px;
+  stroke-width: 1px;
 }
+
+.dot {
+  cursor: pointer;
+}
+
 </style>
-<form>
-  <input type="button" name="refresh" value="Refresh">
-  <label><input type="radio" name="mode" value="area"> Area</label>
-  <label><input type="radio" name="mode" value="line" checked> Line</label>
-  <label><input type="radio" name="mode" value="stacked" checked> Stacked</label>
-</form>
 <svg width="960" height="500"></svg>
-<script src="//d3js.org/d3.v4.js"></script>
+<script src="https://d3js.org/d3.v4.js"></script>
 <script>
 
 var svg = d3.select("svg"),
-    colwidth = 50,
     margin = {top: 20, right: 20, bottom: 30, left: 50},
     width = svg.attr("width") - margin.left - margin.right,
     height = svg.attr("height") - margin.top - margin.bottom,
@@ -28,9 +26,6 @@ var x = d3.scaleTime().range([0, width]),
     y = d3.scaleLinear().range([height, 0]),
     z = d3.scaleOrdinal().range(["#ff7f0e", "#d62728", "#1f77b4", "#2ca02c"]);
 
-var server = getParameterByName('server', 'PROD'),
-    graph = getParameterByName('graph', 'line');
-
 var keys = ["failures", "errors", "skipped", "success"];
 
 var xAxis = d3.axisBottom(x);
@@ -38,27 +33,22 @@ var xAxis = d3.axisBottom(x);
 var yAxis = d3.axisLeft(y)
     .ticks(10);
 
-var area = d3.area()
-    .x(function(d, i) { return x(d.data.date); })
-    .y0(function(d) { return y(d[0]); })
-    .y1(function(d) { return y(d[1]); });
-
 var line = d3.line()
     //.curve(d3.curveBasis)
     .x(function(d) { return x(d.date); })
     .y(function(d) { return y(d.value); });
 
-var stack = d3.stack()
-    .keys(keys);
-
 var values = {};
 var data = {};
 
-d3.selectAll("input[name='refresh']").on("click", refresh);
-d3.selectAll("input[name='mode']").on("change", change);
+// Create the url toget the data from
+var options = {};
+options['server'] = getParameterByName("server", "PROD");
+options['limit'] = getParameterByName("limit", "20");
+var url = makeURL("bd.php", options);
 
-//d3.json("data.json", function(error, rawdata) {
-d3.json("bd.php?server=" + server, function(error, rawdata) {
+// Get the data and create the plot
+d3.json(url, function(error, rawdata) {
   if (error) throw error;
 
   data = rawdata;
@@ -69,113 +59,49 @@ d3.json("bd.php?server=" + server, function(error, rawdata) {
     return {
       id: id,
       values: data.map(function(d) {
-        return {date: d.date, value: d[id]};
+        return {id: id, mongoid: d.id, date: d.date, value: d[id]};
       })
     };
   });
+    console.log(values);
 
   x.domain(d3.extent(data, function(d) { return d.date; }));
   y.domain([0, d3.max(data, function(d) { return d.total; })]).nice();
   z.domain(keys);
 
-  draw_graph();
-  draw_axis();
-  draw_legend();
-});
+  // test graph
+  g.selectAll(".line")
+    .data(values)
+    .enter()
+      .append("path")
+      .attr("class", "line")
+      .attr("d", function(d) { return line(d.values); })
+      .style("stroke", function(d) { return z(d.id); });
 
-function draw_graph() {
-  if (graph == 'area') {
-    draw_area();
-  } else if (graph == 'line') {
-    draw_line();
-  } else if (graph == 'stacked') {
-    draw_stacked();
-  } else {
-    console.log("Unknown graph : " + graph);
-  }
-}
+  // dots
+  g.selectAll("dots")
+    .data(values)
+    .enter()
+      .append("g")
+      .attr("class", "dots")
+      .selectAll("dot")
+        .data(function(d) { return d.values; })
+        .enter()
+          .append("circle")
+          .attr("class","dot")
+          .attr("r", 3.5)
+          .attr("cx", function(d) { return x(d.date); })
+          .attr("cy", function(d) { return y(d.value); })
+          .style("fill", function(d) { return z(d.id); })
+        .on("click", function(d) { window.open("report.html?id=" + d.mongoid,'report'); });
 
-function draw_area() {
-  var graph = g.selectAll(".graph")
-    .data(stack(data));
-
-  graph.enter()
-    .insert("path", ":first-child")
-    .attr("class","area graph")
-    .attr("id", function(d, i) { return data[i].date; })
-    .style("fill", function(d) { return z(d.key); })
-    .attr("d", area);
-
-  graph.exit()
-    .remove();
-}
-
-function draw_line() {
-  console.log(values);
-  var graph = g.selectAll(".graph")
-    .data(values);
-
-  graph.enter()
-    .insert("path", ":first-child")
-    .attr("class","line graph")
-    .attr("d", function(d) { return line(d.values); })
-    .style("stroke", function(d) { return z(d.id); });
-
-  graph.exit()
-    .remove();
-}
-
-function draw_stacked() {
-  var graph = g.selectAll(".graph")
-    .data(stack(data));
-
-  var rect = graph.enter()
-    .insert("g", ":first-child")
-      .attr("class", "graph")
-      .attr("fill", function(d) { return z(d.key); })
-    .selectAll("rect")
-    .data(function(d) { return d; });
-
-  rect.enter()
-    .append("rect")
-      .attr("class", "area graph")
-      .attr("x", function(d) { return d3.max([0, x(d.data.date) - colwidth/2]); })
-      .attr("y", function(d) { return y(d[1]); })
-      .attr("height", function(d) { return y(d[0]) - y(d[1]); })
-      .attr("width", function(d) {
-          if (x(d.data.date) < colwidth/2) {
-              return colwidth/2 + x(d.data.date);
-          } else if (x(d.data.date) + colwidth/2 > width) {
-              return width - x(d.data.date) + colwidth/2;
-          } else {
-              return colwidth;
-          }
-        });
-  rect.exit()
-    .remove();
-
-  graph.exit()
-    .remove();
-//  var serie = g.selectAll(".serie")
-//    .data(stack(data))
-//    .enter().append("g")
-//      .attr("class", "serie")
-//      .attr("fill", function(d) { return z(d.key); })
-//    .selectAll("rect")
-//    .data(function(d) { return d; })
-//    .enter().append("rect")
-//      .attr("x", function(d) { return x(d.data.date); })
-//      .attr("y", function(d) { return y(d[1]); })
-//      .attr("height", function(d) { return y(d[0]) - y(d[1]); })
-//      .attr("width", x.bandwidth());
-}
-
-function draw_axis() {
+  // x-axis
   g.append("g")
       .attr("class", "axis axis--x")
       .attr("transform", "translate(0," + height + ")")
       .call(xAxis);
 
+  // y-axis
   g.append("g")
       .attr("class", "axis axis--y")
       .call(yAxis)
@@ -186,9 +112,8 @@ function draw_axis() {
       .attr("text-anchor", "start")
       .attr("fill", "#000")
       .text("Tests");
-}
 
-function draw_legend() {
+  // legend
   var legend = g.selectAll(".legend")
     .data(keys.reverse())
     .enter().append("g")
@@ -208,8 +133,9 @@ function draw_legend() {
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
       .text(function(d) { return d; });
-}
+});
 
+// get the query parameter from the URL
 function getParameterByName(name, def, url) {
   if (!url) url = window.location.href;
   name = name.replace(/[\[\]]/g, "\\$&");
@@ -220,60 +146,17 @@ function getParameterByName(name, def, url) {
   return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
 
-function refresh() {
-//  d3.json("data2.json", function(error, rawdata) {
-  d3.json("bd.php?server=" + server, function(error, rawdata) {
-    if (error) throw error;
-
-    data = rawdata;
-    data.forEach(function(d) {
-      d.date = new Date(d.date);
-    });
-    values = keys.map(function(id) {
-      return {
-        id: id,
-        values: data.map(function(d) {
-          return {date: d.date, value: d[id]};
-        })
-      };
-    });
-
-    x.domain(d3.extent(data, function(d) { return d.date; }));
-    y.domain([0, d3.max(data, function(d) { return d.total; })]).nice();
-
-    g.selectAll(".line")
-      .data(values);
-    g.selectAll("path.line")
-      .transition()
-      .duration(2000)
-      .ease(d3.easeLinear)
-      .attr("d", function(d) { return line(d.values); });
-
-    g.selectAll(".area")
-      .data(stack(data));
-    g.selectAll("path.area")
-      .transition()
-      .duration(2000)
-      .ease(d3.easeLinear)
-      .attr("id", function(d, i) { return data[i].date; })
-      .style("fill", function(d) { return z(d.key); })
-      .attr("d", area);
-
-    g.selectAll(".axis--x")
-      .transition(750)
-      .ease(d3.easeLinear)
-      .call(xAxis);
-    g.selectAll(".axis--y")
-      .transition(750)
-      .ease(d3.easeLinear)
-      .call(yAxis);
-  });
+// convert the object to a GET url
+function makeURL(url, options) {
+  var query = url;
+  var addand = false;
+  for(var k in options) {
+    if (options.hasOwnProperty(k)) {
+      query = query + (addand ? "&" : "?");
+      query = query + encodeURIComponent(k) + "=" + encodeURIComponent(options[k]);
+      addand = true;
+    }
+  }
+  return query;
 }
-
-function change() {
-    graph = this.value;
-    g.selectAll(".graph").remove();
-    draw_graph();
-}
-
 </script>
