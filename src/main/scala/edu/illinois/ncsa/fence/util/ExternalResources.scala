@@ -34,7 +34,7 @@ object ExternalResources {
       r.headerMap.get(Fields.ContentLength) match {
         case Some(length) =>
           val bytes = length.toInt
-          log.debug(s"Adding $bytes to $resourceType")
+          log.debug(s"Adding $bytes bytes to $resourceType")
           Redis.logBytes(resourceType, bytes)
         case None => log.debug("no")
       }
