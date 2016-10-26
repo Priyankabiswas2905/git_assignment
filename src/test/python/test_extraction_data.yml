@@ -32,15 +32,16 @@
   file_url: http://browndog.ncsa.illinois.edu/examples/peter.txt
   output: http://browndog.ncsa.illinois.edu/examples/outputs/peter.json
 -
-  description: Test ncsa.image.ocr
-  file_url: http://browndog.ncsa.illinois.edu/examples/browndog.png
-  output: The BrownDog project
--
+	skip: periodic variations in ocr output
   description: Test ncsa.image.ocr
   file_url: http://browndog.ncsa.illinois.edu/examples/ncsa.jpg
   output: http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.jpg.json
 -
-  skip: commented out, does not work always?
+  skip: simpler image, however, still has period variations in ocr output
   description: Test ncsa.image.ocr
   file_url: http://browndog.ncsa.illinois.edu/examples/cache/isdatools_banner2.png
   output: The ISDA Tools for Digital Preservation
+-
+  description: Test ncsa.image.ocr
+  file_url: http://browndog.ncsa.illinois.edu/examples/browndog.png
+  output: The BrownDog project
