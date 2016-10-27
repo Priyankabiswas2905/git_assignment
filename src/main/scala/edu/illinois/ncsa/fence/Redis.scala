@@ -5,7 +5,6 @@ import java.util.{Calendar, UUID}
 
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
-import com.twitter.finagle.netty3.ChannelBufferBuf
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.protocol.ZInterval
 import com.twitter.finagle.redis.util._
@@ -13,14 +12,12 @@ import com.twitter.io.Buf
 import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
-import edu.illinois.ncsa.fence.models.{BytesStats, Event, Stats}
+import edu.illinois.ncsa.fence.models.{BytesStats, Stats}
 import org.jboss.netty.buffer.ChannelBuffer
 
 import scala.util.{Failure, Success, Try}
 
-/**
-  * Client to redis.
-  */
+/** Client to redis. */
 object Redis {
 
   private val conf = ConfigFactory.load()
@@ -32,8 +29,6 @@ object Redis {
   private val eventNamespace = "event:"
   private val host = conf.getString("redis.host")+":"+conf.getString("redis.port")
 
-//  val redis = com.twitter.finagle.redis.Client(host)
-
   val redis = Client(
     ClientBuilder()
       .hosts(host)
@@ -42,20 +37,23 @@ object Redis {
       .daemon(true)
       .buildFactory())
 
+  /** Create a token based on a key. Time to live is set based on configuration file. */
   def createToken(key: UUID): UUID = {
     val token = Token.newToken()
     val ttl = conf.getLong("token.ttl")
-    // token => key
+    // Store token => key
     redis.setEx(StringToBuf(tokenNamespace+token.toString), ttl, StringToBuf(key.toString))
-    // key => tokens
+    // Store key => tokens
     redis.sAdd(StringToChannelBuffer(apiKeyNamespace+key+":tokens"), List(StringToChannelBuffer(token.toString)))
     token
   }
 
+  /** Check token's time to live. */
   def checkToken(token: UUID): Future[Option[JLong]] = {
     redis.ttl(StringToBuf(tokenNamespace+token.toString))
   }
 
+  /** Get user from token. */
   def getUser(token: UUID): Future[Option[String]] = {
     val tokenBuf = StringToBuf(tokenNamespace+token.toString)
     redis.get(tokenBuf).flatMap{
@@ -74,6 +72,7 @@ object Redis {
     }
   }
 
+  /** Delete token and update all redis key values. */
   def deleteToken(token: UUID): Boolean = {
     // find key for token
     val maybeKey = redis.get(StringToBuf(tokenNamespace+token.toString))
@@ -81,7 +80,6 @@ object Redis {
       someKey match {
         case Some(k) =>
           val key = BufToString(k)
-          log.debug(s"Found key $key when deleting token $token")
           // if key was found delete token from key => token set
           redis.sRem(StringToChannelBuffer(apiKeyNamespace+key+":tokens"),
             List(StringToChannelBuffer(token.toString)))
@@ -96,21 +94,23 @@ object Redis {
     return true
   }
 
+  /** Create a new key for a specific user. */
   def createApiKey(userId: String): UUID = {
     val apiKey = Key.newKey()
-    // key => username
+    // Store key => username
     redis.set(StringToBuf(apiKeyNamespace+apiKey), StringToBuf(userId))
-    // username => keys
+    // Store username => keys
     redis.sAdd(StringToChannelBuffer(userNamespace+userId+":keys"), List(StringToChannelBuffer(apiKey.toString)))
     apiKey
   }
 
+  /** Delete key and all tokens related to it. */
   def deleteApiKey(key: String): Unit = {
     // get tokens by key
     val tokens = redis.sMembers(StringToChannelBuffer(apiKeyNamespace + key + ":tokens"))
     tokens.flatMap { allTokens =>
       for (t <- allTokens) {
-        log.debug("Deleting token " + t)
+        log.debug("Deleting api token")
         // delete token
         val token = BytesToString(t.array())
         redis.dels(Seq(StringToBuf(tokenNamespace + token)))
@@ -135,7 +135,7 @@ object Redis {
     }
   }
 
-  @deprecated
+  @deprecated("Use getAPIKeyFuture instead", "0.1.0")
   def getAPIKey(apiKey: String): Try[String] = {
     Await.result(redis.get(StringToBuf(apiKeyNamespace+apiKey)), 5.seconds) match {
       case Some(buf) => Success(BufToString(buf))
@@ -143,18 +143,28 @@ object Redis {
     }
   }
 
+  /** Check that a key exists */
   def getAPIKeyFuture(apiKey: String): Future[Option[Buf]] = {
     redis.get(StringToBuf(apiKeyNamespace+apiKey))
   }
 
+  /** Increase a redis counter by key */
   def increaseCounter(counter: String) {
     redis.incr(StringToBuf(stats+counter))
   }
 
+  /** Increase a stats bytes counter by number of bytes */
   def logBytes(endpoint: String, length: Int): Unit = {
     redis.incrBy(StringToBuf(stats+"bytes:"+endpoint), length)
   }
 
+  /** Store an event when a client uploads a file or URL for conversion or extraction.
+    *
+    * @param eventType extraction, conversion
+    * @param resource file:// for local files, http:// or https:// for remote URLs
+    * @param user id of the account making the request
+    * @param clientIP client IP
+    */
   def storeEvent(eventType: String, resource: String, user: String, clientIP: String): Unit = {
     val millis = System.currentTimeMillis()
     val calendar = Calendar.getInstance()
