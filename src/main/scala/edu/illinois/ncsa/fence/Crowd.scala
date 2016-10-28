@@ -36,7 +36,7 @@ object Crowd {
                   log.trace("Forwarding request on after checking against Crowd")
                   continue(request)
                 } else {
-                  log.error("Error checking credentials. Status is " + session.status)
+                  log.error("Error checking credentials. Status is " + r.status)
                   log.error("Session: " + r.contentString)
                   val errorResponse = Response(Version.Http11, Status.Forbidden)
                   errorResponse.contentString = "Invalid credentials"

@@ -1,0 +1,111 @@
+<html>
+<head>
+    <title>Brown Dog Status Page</title>
+    <style>
+        .failure {
+            background: #ffbf8b;
+        }
+        .errors {
+            background: #FFBBBB;
+        }
+        .skipped {
+            background: #aed5ff;
+        }
+        .success {
+            background: #BBFFBB;
+        }
+        th {
+            padding-right: 5px;
+        }
+        td {
+            padding: 0px 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="result"></div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script>
+    function fetch_data() {
+        var div = $('#result');
+        div.empty();
+
+        var url = "bd.php";
+        var options = {"expand": "all"};
+        options['id'] = getParameterByName("id", "0");
+        $.getJSON(url, options, function (results) {
+            var result = results[0];
+
+            div.append("<table border=0 cellpadding='10'><tbody>");
+            div.append("<tr><th align='left'>ID</th><td>" + result['id'] + "</td></tr>");
+            div.append("<tr><th align='left'>Server</th><td>" + result['server'] + "</td></tr>");
+            div.append("<tr><th align='left'>Date</th><td>" + new Date(result['date']) + "</td></tr>");
+            div.append("<tr><th align='left'>Total Tests</th><td>" + result['total'] + "</td></tr>\n");
+            div.append("<tr><th align='left'><a href='#failures'>Failures</a></th><td>" + result['failures'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#errors'>Errors</a></th><td>" + result['errors'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#skipped'>Skipped</a></th><td>" + result['skipped'] + "</td></tr>");
+            div.append("<tr><th align='left'><a href='#success'>Success<v/th><td>" + result['success']+ "</td></tr>");
+            div.append("<tr><th align='left'>Elapsed time</th><td>" + result['time'] + " seconds</td></tr>");
+            div.append("</tbody></table>");
+
+            var tests = result['results'];
+            if (tests.hasOwnProperty('failures'))
+                render_section("Failures", tests['failures']);
+            if (tests.hasOwnProperty('errors'))
+                render_section("Errors", tests['errors']);
+            if (tests.hasOwnProperty('skipped'))
+                render_section("Skipped", tests['skipped']);
+            if (tests.hasOwnProperty('success'))
+                render_section("Success", tests['success']);
+        });
+    }
+
+    function render_section(title, data) {
+        if (data.length == 0) return;
+
+        var div = $('#result');
+        div.append("<a name='" + title.toLowerCase() + "'><h2>" + title + "</a></h2>");
+
+        $.each(data, function (i, row) {
+            var text = "";
+
+            div.append("<table border=0>");
+            div.append("<tr><th align='left'>Name</th><td>" + row['name'] + "</td></tr>");
+            div.append("<tr><th align='left'>Classname</th><td>" + row['classname'] + "</td></tr>");
+            div.append("<tr><th align='left'>Time</th><td>" + row['time'] + " seconds</td></tr>");
+            if (row.hasOwnProperty('message')) {
+                text = row['message'].replace(new RegExp("\n", 'g'), "<br/>");
+                div.append("<tr><th align='left' valign='top'>Message</th><td>" + text + "</td></tr>");
+            }
+            if (row.hasOwnProperty('system-out')) {
+                text = row['system-out'].replace(new RegExp("\n", 'g'), "<br/>");
+                div.append("<tr><th align='left' valign='top'>System Out</th><td>" + text + "</td></tr>");
+            }
+            if (row.hasOwnProperty('system-err')) {
+                text = row['system-err'].replace(new RegExp("\n", 'g'), "<br/>");
+                div.append("<tr><th align='left' valign='top'>System Err</th><td>" + text + "</td></tr>");
+            }
+            if (row.hasOwnProperty('trace')) {
+                text = row['trace'];
+                div.append("<tr><th align='left' valign='top'>Trace</th><td><pre>" + text + "</pre></td></tr>");
+            }
+            div.append("</table>");
+            div.append("<hr/>");
+        })
+    }
+
+    function getParameterByName(name, def, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"), results = regex.exec(url);
+        if (!results) return def;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    fetch_data();
+</script>
+</body>
+</html>
