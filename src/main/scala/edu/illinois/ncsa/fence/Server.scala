@@ -28,11 +28,17 @@ object Server extends TwitterServer {
 
   private val conf = ConfigFactory.load()
 
-  val polyglot: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dap.url"))
+  /** https://opensource.ncsa.illinois.edu/bitbucket/projects/POL */
+  val polyglot = Http.client.withStreaming(enabled = true).newService(conf.getString("dap.url"))
 
-  val clowder: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dts.url"))
+  /** https://clowder.ncsa.illinois.edu/ */
+  val clowder = Http.client.withStreaming(enabled = true).newService(conf.getString("dts.url"))
 
-  val dw: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dw.url"))
+  /** https://opensource.ncsa.illinois.edu/bitbucket/projects/WOLF */
+  val dw = Http.client.withStreaming(enabled = true).newService(conf.getString("dw.url"))
+
+  /** https://opensource.ncsa.illinois.edu/bitbucket/projects/BD/repos/bd-aux-services/browse/extractor-info-fetcher */
+  val extractorsInfo = Http.client.withStreaming(enabled = true).newService(conf.getString("extractorsinfo.url"))
 
   /** Filter to handle exceptions. Currently not used. **/
   val handleExceptions = new HandleExceptions
@@ -406,6 +412,48 @@ object Server extends TwitterServer {
     }
   }
 
+  /**
+    * Proxy to Extractors Info service.
+    *
+    * @param path path fragment
+    */
+  def extractorsInfoPath(path: String) = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
+      log.debug("[Endpoint] Extractors info")
+      // return error response if query parameter is not provided
+      if (!req.params.contains("file_type")) {
+        return Future.value(missingParam("file_type"))
+      }
+      val eiReq = Request(req.method, path)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.trace(s"Extractors Info Header: $key -> $value")
+          eiReq.headerMap.add(key, value)
+        }
+      }
+      log.debug("Extractors Info " + req)
+      val rep = extractorsInfo(eiReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
+    }
+  }
+
+  /** Create a Bad Request response in cases where a query parameter is missing.
+    *
+    * @param param missing query parameter
+    * @return a Bad Request response with message
+    */
+  def missingParam(param: String): Response = {
+    val error = Response(Version.Http11, Status.BadRequest)
+    error.setContentTypeJson()
+    error.setContentString(s"""{"status":"error", "message":"Parameter '$param' required"}""")
+    error
+  }
+
   // CORS filter
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
 
@@ -439,6 +487,7 @@ object Server extends TwitterServer {
     case (Get, Root / "events") => cors andThen tokenFilter andThen events()
     case (Get, Root / "stats") => cors andThen stats()
     case (Post, Root / "dw" / "provenance") => cors andThen tokenFilter andThen datawolfPath("/browndog/provenance")
+    case (Get, Root / "extractors") => cors andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
     case _ => notFound
   }
 
