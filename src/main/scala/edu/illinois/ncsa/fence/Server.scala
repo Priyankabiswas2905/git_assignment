@@ -455,6 +455,16 @@ object Server extends TwitterServer {
   }
 
   // CORS filter
+  def swagger(): Service[Request, Response] = {
+    log.debug("Swagger documentation")
+    Service.mk { (req: Request) =>
+      val r = Response()
+      val text = utils.Files.readResourceFile("/swagger.json")
+      r.setContentString(text)
+      Future.value(r)
+    }
+  }
+
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
 
   /** Application router **/
@@ -488,6 +498,7 @@ object Server extends TwitterServer {
     case (Get, Root / "stats") => cors andThen stats()
     case (Post, Root / "dw" / "provenance") => cors andThen tokenFilter andThen datawolfPath("/browndog/provenance")
     case (Get, Root / "extractors") => cors andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
+    case (Get, Root / "swagger.json") => cors andThen swagger
     case _ => notFound
   }
 

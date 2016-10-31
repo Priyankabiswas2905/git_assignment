@@ -1,0 +1,1051 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Brown Dog API",
+        "description": "Documentation for the [Brown Dog](http://browndog.ncsa.illinois.edu/) API",
+        "termsOfService": "http://browndog.ncsa.illinois.edu/terms",
+        "contact": {
+            "name": "Brown Dog Support",
+            "url": "https://hipchat.ncsa.illinois.edu/g4t6TnI5s",
+            "email": "browndog@ncsa.illinois.edu"
+        },
+        "license": {
+            "name": "University of Illinois/NCSA Open Source License",
+            "url": "https://opensource.org/licenses/NCSA"
+        },
+        "version": "0.1.0"
+    },
+    "host": "bd-api-dev.ncsa.illinois.edu",
+    "basePath": "/v1",
+    "schemes": [
+        "https"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "securityDefinitions": {
+        "token": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authentication"
+        },
+        "login": {
+            "type": "basic"
+        }
+    },
+    "paths": {
+        "/keys": {
+            "post": {
+                "summary": "Create a new api key",
+                "description": "Create a new api key",
+                "tags": [
+                    "Authorization"
+                ],
+                "security": [
+                    {
+                        "login": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newly created api key",
+                        "schema": {
+                            "$ref": "#/definitions/APIKey"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/keys/{key}/tokens": {
+            "post": {
+                "summary": "Create a new access token from api key",
+                "description": "Most endpoints require a token. API keys are unique and never expire. \nUsers can create as many tokens as they want for each key they have. \nTokens expire after 24 hours. After that a new token will have to be created.\n",
+                "tags": [
+                    "Authorization"
+                ],
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "description": "API Key",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newly created token",
+                        "schema": {
+                            "$ref": "#/definitions/Token"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/keys/{key}": {
+            "delete": {
+                "summary": "Delete api key and all related access tokens",
+                "description": "Delete api key and all related access tokens",
+                "tags": [
+                    "Authorization"
+                ],
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "description": "API Key",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Whether the operation was successful or not",
+                        "schema": {
+                            "$ref": "#/definitions/Status"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/tokens/{token}": {
+            "get": {
+                "summary": "Get info about token",
+                "description": "Retrieves whether the token is still alive and what the remaining time to live is. \n",
+                "tags": [
+                    "Authorization"
+                ],
+                "security": [
+                    {
+                        "login": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "description": "Access token",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newly created token",
+                        "schema": {
+                            "$ref": "#/definitions/TokenInfo"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "summary": "Delete token",
+                "description": "Delete token",
+                "tags": [
+                    "Authorization"
+                ],
+                "security": [
+                    {
+                        "login": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "path",
+                        "description": "Access token",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Whether the operation was successful or not",
+                        "schema": {
+                            "$ref": "#/definitions/Status"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/outputs": {
+            "get": {
+                "summary": "List all output formats that can be reached",
+                "description": "List all output formats that can be reached\n",
+                "tags": [
+                    "Conversions"
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available output file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/inputs": {
+            "get": {
+                "summary": "List all input formats that can be accepted",
+                "description": "List all input formats that can be accepted",
+                "tags": [
+                    "Conversions"
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available input file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/inputs/{input_format}": {
+            "get": {
+                "summary": "List all output formats that can reach the specified input format",
+                "description": "List all output formats that can reach the specified input format",
+                "tags": [
+                    "Conversions"
+                ],
+                "parameters": [
+                    {
+                        "name": "input_format",
+                        "in": "path",
+                        "description": "Input file format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available output file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/convert": {
+            "get": {
+                "summary": "List all output formats that can be reached",
+                "description": "List all output formats that can be reached",
+                "tags": [
+                    "Conversions"
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available output file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/convert/{output_format}/{file_url}": {
+            "get": {
+                "summary": "Convert the specified file to the requested output format",
+                "description": "Convert the specified file to the requested output format\n",
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output file format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "file_url",
+                        "in": "path",
+                        "description": "Encoded url of file we want to download and convert.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Link to converted file",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/convert/{output_format}": {
+            "post": {
+                "summary": "Convert the uploaded file to the requested output format",
+                "description": "Convert the uploaded file to the requested output format\n",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output file format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "binary"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available output file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/software": {
+            "get": {
+                "summary": "List all available conversion software",
+                "description": "List all available conversion software\n",
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available conversion software",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/software/{software}/convert/{output_format}/{file_url}": {
+            "get": {
+                "summary": "Convert the specified file to the requested output format using the specified software",
+                "description": "Convert the specified file to the requested output format using the specified software\n",
+                "parameters": [
+                    {
+                        "name": "software",
+                        "in": "path",
+                        "description": "Software name.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "file_url",
+                        "in": "path",
+                        "description": "URL encoded remote file URL",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available conversion software",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/software/{software}/convert/{output_format}": {
+            "post": {
+                "summary": "Convert the uploaded file to the requested output format using the specified software",
+                "description": "Convert the uploaded file to the requested output format using the specified software\n",
+                "parameters": [
+                    {
+                        "name": "software",
+                        "in": "path",
+                        "description": "Software name.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available conversion software",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/servers": {
+            "get": {
+                "summary": "List all currently available Software Servers",
+                "description": "List all currently available Software Servers\n",
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available conversion software servers",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/upload_url": {
+            "post": {
+                "summary": "Uploads a file for extraction using the file's URL",
+                "description": "Uploads a file for extraction using the file's URL\n",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/FileURL"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/upload_file": {
+            "post": {
+                "summary": "Uploads a file in the body for extraction of metadata",
+                "description": "Uploads a file for extraction using the file's URL\n",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "binary"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/supported_input_types": {
+            "get": {
+                "summary": "Lists the input file format supported by currently running extractors",
+                "description": "Lists the input file format supported by currently running extractors\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available input file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/{file_id}/status": {
+            "get": {
+                "summary": "Checks for the status of all extractors processing the file with id",
+                "description": "Checks for the status of all extractors processing the file with id\n",
+                "parameters": [
+                    {
+                        "name": "file_id",
+                        "in": "path",
+                        "description": "File id returned from original file submission for extraction",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available input file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/files/{file_id}/metadata.jsonld": {
+            "get": {
+                "summary": "Get metadata associated with the file (in JSON-LD)",
+                "description": "Get metadata associated with the file (in JSON-LD)\n",
+                "parameters": [
+                    {
+                        "name": "file_id",
+                        "in": "path",
+                        "description": "File id returned from original file submission for extraction",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Metadata in JSON-LD format",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/files/{file_id}/tags": {
+            "get": {
+                "summary": "Gets tags associated with the file",
+                "description": "Gets tags associated with the file\n",
+                "parameters": [
+                    {
+                        "name": "file_id",
+                        "in": "path",
+                        "description": "File id returned from original file submission for extraction",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of tags",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/files/{file_id}/versusmetadata": {
+            "get": {
+                "summary": "Get Versus metadata associated with the file",
+                "description": "Get Versus metadata associated with the file\n",
+                "parameters": [
+                    {
+                        "name": "file_id",
+                        "in": "path",
+                        "description": "File id returned from original file submission for extraction",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of feature vectors",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/files/{file_id}/extractions": {
+            "post": {
+                "summary": "Uploads a file in the body for extraction of metadata",
+                "description": "Uploads a file for extraction using the file's URL\n",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "file_id",
+                        "in": "path",
+                        "description": "File id returned from original file submission for extraction",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SubmissionToExtractor"
+                        }
+                    }
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File id",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/server_ips": {
+            "get": {
+                "summary": "Lists servers IPs running the extractors",
+                "description": "Lists servers IPs running the extractors\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of server IPs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractors": {
+            "get": {
+                "summary": "Lists the past and present registered extractors",
+                "description": "Lists the past and present registered extractors\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of extractor ids",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/extractors_names": {
+            "get": {
+                "summary": "Lists the currently running extractors",
+                "description": "Lists the currently running extractors\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of extractor ids",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/extractors_details": {
+            "get": {
+                "summary": "Lists the details of the currently running extractors",
+                "description": "Lists the details of the currently running extractors\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of extractor details",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "Status": {
+            "type": "object",
+            "properties": {
+                "fileurl": {
+                    "type": "string",
+                    "description": "Whether the operation was successfull or not"
+                }
+            }
+        },
+        "FileURL": {
+            "type": "object",
+            "properties": {
+                "fileurl": {
+                    "type": "string",
+                    "description": "URL of remote file"
+                }
+            }
+        },
+        "APIKey": {
+            "type": "object",
+            "properties": {
+                "api-key": {
+                    "type": "string",
+                    "description": "API key"
+                }
+            }
+        },
+        "Token": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "description": "Access token (expires after 24 hours)"
+                }
+            }
+        },
+        "TokenInfo": {
+            "type": "object",
+            "properties": {
+                "found": {
+                    "type": "string",
+                    "description": "Whether the token is still active or not"
+                },
+                "ttl": {
+                    "type": "integer",
+                    "description": "Remaning time to live"
+                }
+            }
+        },
+        "SubmissionToExtractor": {
+            "type": "object",
+            "properties": {
+                "extractor": {
+                    "type": "string",
+                    "description": "Extractor id, for example ncsa.image.metadata"
+                }
+            }
+        },
+        "Error": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "fields": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

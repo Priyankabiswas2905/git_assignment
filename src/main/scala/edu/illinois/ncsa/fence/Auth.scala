@@ -99,6 +99,7 @@ object Auth {
 
   def createApiKey() = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
+      log.debug("[Endpoint] Create key")
       BasicAuth.extractCredentials(req) match {
         case Some(cred) =>
           val apiKey = Redis.createApiKey(cred.username)
@@ -118,7 +119,7 @@ object Auth {
 
   def deleteApiKey(key: String) = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
-      log.debug("Deleting api key")
+      log.debug("[Endpoint] Deleting api key")
       Redis.deleteApiKey(key)
       val res = Response(req.version, Status.Ok)
       res.contentType = "application/json;charset=UTF-8"
