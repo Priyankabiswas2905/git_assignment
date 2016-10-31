@@ -9,6 +9,7 @@ mainClass in assembly := Some("edu.illinois.ncsa.fence.Server")
 lazy val versions = new {
   val finagle = "6.35.0"
   val finatra = "2.1.6"
+  val twitterServer = "1.23.0"
   val guice = "4.0"
   val logback = "1.0.13"
   val jvm = "1.7"
@@ -30,7 +31,7 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "finagle-http" % versions.finagle,
   "com.twitter" %% "finagle-stats" % versions.finagle,
   "com.twitter" %% "finagle-redis" % versions.finagle,
-  "com.twitter" %% "twitter-server" % "1.20.0",
+  "com.twitter" %% "twitter-server" % versions.twitterServer,
   "com.typesafe" % "config" % "1.2.1",
 
 //  "com.twitter.finatra" %% "finatra-http" % versions.finatra % "provided",
