@@ -80,7 +80,11 @@ object Server extends TwitterServer {
     def apply(req: Request): Future[Response] = {
       log.debug("[Endpoint] Route not found")
       val res = Response(req.version, Status.NotFound)
-      res.contentString = "Route not found"
+      res.contentString =
+        s"""{
+          |"status":"error",
+          |"message":
+          |"Route not found. Please check api documentation available at ${conf.getString("fence.hostname")}/docs."}""".stripMargin
       Future.value(res)
     }
   }
