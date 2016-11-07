@@ -5,7 +5,7 @@ import java.util.UUID
 
 import com.twitter.finagle.http.Method.{Delete, Get, Post}
 import com.twitter.finagle.http.Version.Http11
-import com.twitter.finagle.http._
+import com.twitter.finagle.http.{Request, _}
 import com.twitter.finagle.http.filter.Cors
 import com.twitter.finagle.http.path.{Path, _}
 import com.twitter.finagle.http.service.RoutingService
@@ -85,13 +85,13 @@ object Server extends TwitterServer {
     }
   }
 
-  /** return a url for the key prefix */
+  /** Return a url for the key prefix */
   def getServiceURL(prefixKey: String): URL = {
     val confval = conf.getString(prefixKey + ".url")
     Try(new URL(confval)).getOrElse(new URL("http://" + confval))
   }
 
-  /** return host:port part of the key prefix */
+  /** Return host:port part of the key prefix */
   def getServiceHost(prefixKey: String): String = {
     val url = getServiceURL(prefixKey)
     if (url.getPort == -1) {
@@ -101,7 +101,7 @@ object Server extends TwitterServer {
     }
   }
 
-  /** create a service based on the key prefix, handles https */
+  /** Create a service based on the key prefix, handles https */
   def getService(prefixKey: String) = {
     val url = getServiceURL(prefixKey)
     if (url.getProtocol == "https") {
@@ -111,17 +111,25 @@ object Server extends TwitterServer {
     }
   }
 
-  /** return the context-path of the key prefix */
+  /** Return the context-path of the key prefix */
   def getServiceContextPath(prefixKey: String): String = {
     getServiceURL(prefixKey).getPath
   }
 
-  /** create a basic auth based on the key prefix */
+  /** Create a basic auth based on the key prefix */
   def getServiceBasicAuth(prefixKey: String): String = {
     val user = conf.getString(s"$prefixKey.user")
     val password = conf.getString(s"$prefixKey.password")
     val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
     "Basic " + encodedCredentials
+  }
+
+  /** Return the URI query parameters of the original request as a String.
+    * Eventually we might be more selective and remove certain parameters (such as token).
+    * @param originalReq original request from which to extract the query parameters
+    */
+  def getURIParams(originalReq: Request): String = {
+    Request.queryString(originalReq.params)
   }
 
   /**
@@ -132,7 +140,8 @@ object Server extends TwitterServer {
     def apply(req: Request): Future[Response] = {
       log.debug("[Endpoint] Polyglot catch all")
       dapStats.incr()
-      val dapReq = Request(req.method, path.toString)
+      val newPathWithParameters = path + getURIParams(req)
+      val dapReq = Request(req.method, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Headers: $key -> $value")
@@ -161,7 +170,8 @@ object Server extends TwitterServer {
     def apply(req: Request): Future[Response] = {
       log.debug("[Endpoint] Clowder catch all")
       dtsStats.incr()
-      val dtsReq = Request(req.method, getServiceContextPath("dts") + path.toString)
+      val newPathWithParameters = getServiceContextPath("dts") + path + getURIParams(req)
+      val dtsReq = Request(req.method, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
@@ -187,8 +197,8 @@ object Server extends TwitterServer {
   def extractBytes(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Streaming clowder upload " + path)
     Service.mk { (req: Request) =>
-      clowder.toString()
-      val newReq = Request(Http11, Post, getServiceContextPath("dts") + path.toString, req.reader)
+      val newPathWithParameters = getServiceContextPath("dts") + path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
@@ -221,8 +231,8 @@ object Server extends TwitterServer {
   def extractURL(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Extract from url " + path)
     Service.mk { (req: Request) =>
-      // create new request against Clowder
-      val newReq = Request(Http11, Post, getServiceContextPath("dts") + path.toString, req.reader)
+      val newPathWithParameters = getServiceContextPath("dts") + path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
@@ -257,7 +267,8 @@ object Server extends TwitterServer {
   def convertBytes(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Streaming polyglot upload " + path)
     Service.mk { (req: Request) =>
-      val newReq = Request(Http11, Post, path, req.reader)
+      val newPathWithParameters = path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
@@ -301,9 +312,8 @@ object Server extends TwitterServer {
     val url = URLDecoder.decode(encodedUrl, "UTF-8")
     log.debug("[Endpoint] Convert " + url)
     Service.mk { (req: Request) =>
-      // new request
-      val path = "/convert/" + fileType + "/" + encodedUrl
-      val newReq = Request(Http11, Post, path, req.reader)
+      val newPathWithParameters = "/convert/" + fileType + "/" + encodedUrl + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
@@ -415,7 +425,8 @@ object Server extends TwitterServer {
         case Some(e: Map[String,Any]) => JSONObject(e + ("fence" -> fenceURL))
         case _ => prevBody
       }
-      val newReq = Request(Http11, Post, path)
+      val newPathWithParameters = path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           newReq.headerMap.add(key, value)
@@ -447,7 +458,8 @@ object Server extends TwitterServer {
       if (!req.params.contains("file_type")) {
         return Future.value(missingParam("file_type"))
       }
-      val eiReq = Request(req.method, path)
+      val newPathWithParameters = path + getURIParams(req)
+      val eiReq = Request(req.method, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Extractors Info Header: $key -> $value")
