@@ -9,6 +9,7 @@ import com.twitter.io.Buf
 import com.twitter.server.util.JsonConverter
 import com.twitter.util.{Base64StringEncoder, Future}
 import edu.illinois.ncsa.fence.Server._
+import edu.illinois.ncsa.fence.util.GatewayHeaders
 
 import scala.util.{Failure, Success}
 
@@ -20,8 +21,6 @@ object Auth {
   val accessTokenStats = statsReceiver.counter("fence-new-access-token")
 
   val checkTokenStats = statsReceiver.counter("fence-check-access-token")
-
-  val usernameHeader = "X-BD-Username"
 
   def newAccessToken(key: UUID) = new Service[http.Request, http.Response] {
     def apply(req: http.Request): Future[http.Response] = {
@@ -67,20 +66,7 @@ object Auth {
             checkTokenStats.incr()
             Future.value(res)
         }
-
-
       }
-
-//        case Future(Some(ttl)) =>
-//        if (ttl == -2)
-//          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "false")))
-//        else
-//          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "true", "ttl" -> ttl)))
-//        case None =>
-//          res.content = Buf.Utf8(JsonConverter.writeToString(Map("found" -> "false")))
-//      }
-//      checkTokenStats.incr()
-//      Future.value(res)
     }
   }
 
@@ -188,15 +174,17 @@ object Auth {
           case Some(token) =>
             Redis.getUser(UUID.fromString(token)) flatMap {
                 case Some(user) =>
-                    request.headerMap.add(usernameHeader, user)
-                    continue(request)
+                  request.headerMap.add(GatewayHeaders.usernameHeader, user)
+                  request.headerMap.add(GatewayHeaders.tokenHeader, token)
+                  continue(request)
                 case None => invalidToken()
               }
           case None =>
             request.params.get("token") map { token =>
               Redis.getUser(UUID.fromString(token)) flatMap {
                 case Some(user) =>
-                  request.headerMap.add(usernameHeader, user)
+                  request.headerMap.add(GatewayHeaders.usernameHeader, user)
+                  request.headerMap.add(GatewayHeaders.tokenHeader, token)
                   continue(request)
                 case None => invalidToken()
               }

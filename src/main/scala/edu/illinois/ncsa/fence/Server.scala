@@ -17,7 +17,8 @@ import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import edu.illinois.ncsa.fence.models.Stats
-import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, Jackson}
+import edu.illinois.ncsa.fence.util.GatewayHeaders.GatewayHostHeaderFilter
+import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, GatewayHeaders, Jackson}
 
 import scala.util.parsing.json.JSON
 import scala.util.parsing.json.JSONObject
@@ -27,6 +28,7 @@ import scala.util.parsing.json.JSONObject
   */
 object Server extends TwitterServer {
 
+  /** Load configuration file using typesafehub config */
   private val conf = ConfigFactory.load()
 
   /** https://opensource.ncsa.illinois.edu/bitbucket/projects/POL */
@@ -40,11 +42,6 @@ object Server extends TwitterServer {
 
   /** https://opensource.ncsa.illinois.edu/bitbucket/projects/BD/repos/bd-aux-services/browse/extractor-info-fetcher */
   val extractorsInfo = getService("extractorsinfo")
-
-  /** Filter to handle exceptions. Currently not used. **/
-  val handleExceptions = new HandleExceptions
-
-  val tokenFilter = new TokenFilter
 
   /** Pick a provider for authenticating users. Currently local in configuration file or external in Atlassian Crowd **/
   val userAuth: SimpleFilter[Request, Response] = conf.getString("auth.provider") match {
@@ -215,7 +212,7 @@ object Server extends TwitterServer {
       }
       log.debug("Uploaded bytes for extraction " +  req.getLength())
       // log stats and events
-      val username = req.headerMap.getOrElse(Auth.usernameHeader, "noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "extractions"
       Redis.storeEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
@@ -249,7 +246,7 @@ object Server extends TwitterServer {
       }
       log.debug(s"Uploaded $req.getLength() bytes for extraction ")
       // log stats and events
-      val username = req.headerMap.getOrElse(Auth.usernameHeader, "noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "extractions"
       val fileurl = Clowder.extractFileURL(req)
       ExternalResources.contentLengthFromHead(fileurl, logKey)
@@ -294,7 +291,7 @@ object Server extends TwitterServer {
       }
       log.debug("Uploaded bytes for conversion " +  req.getLength())
       // log events
-      val username = req.headerMap.getOrElse(Auth.usernameHeader, "noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       Redis.storeEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
       Redis.increaseCounter(logKey)
@@ -338,7 +335,7 @@ object Server extends TwitterServer {
         Future.value(r)
       }
       // log stats and events
-      val username = req.headerMap.getOrElse(Auth.usernameHeader, "noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       ExternalResources.contentLengthFromHead(url, logKey)
       Redis.storeEvent("conversion", url, username, req.remoteSocketAddress.toString)
@@ -489,7 +486,7 @@ object Server extends TwitterServer {
     error
   }
 
-  // CORS filter
+  /** Swagger documentation */
   def swagger(): Service[Request, Response] = {
     log.debug("Swagger documentation")
     Service.mk { (req: Request) =>
@@ -500,40 +497,52 @@ object Server extends TwitterServer {
     }
   }
 
+  /** Filter to authorize token */
+  val tokenFilter = new TokenFilter
+
+  /** CORS Filter */
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
+
+  /** Outside URL header */
+  val gatewayURLFilter = new GatewayHostHeaderFilter
+
+  /** Filter to handle exceptions. Currently not used. **/
+  val handleExceptions = new HandleExceptions
+
+  /** Common filters for all endpoints */
+  val cf = cors andThen gatewayURLFilter
 
   /** Application router **/
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root) => redirect(conf.getString("docs.root"))
-    case (Get, Root / "dap" / "alive") => cors andThen tokenFilter andThen polyglotCatchAll(Path("alive"))
-    case (_, Root / "dap" / "convert" / fileType / path) =>  cors andThen tokenFilter andThen convertURL(fileType, path)
-    case (_, "dap" /: "convert" /: path) =>  cors andThen tokenFilter andThen convertBytes("/convert" + path)
-    case (_, "dap" /: path) => cors andThen tokenFilter andThen polyglotCatchAll(path)
-    case (Post, Root / "dts" / "api" / "files") => cors andThen tokenFilter andThen extractBytes("/api/files")
-    case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cors andThen
+    case (Get, Root / "dap" / "alive") => cf andThen tokenFilter andThen polyglotCatchAll(Path("alive"))
+    case (_, Root / "dap" / "convert" / fileType / path) =>  cf andThen tokenFilter andThen convertURL(fileType, path)
+    case (_, "dap" /: "convert" /: path) =>  cf andThen tokenFilter andThen convertBytes("/convert" + path)
+    case (_, "dap" /: path) => cf andThen tokenFilter andThen polyglotCatchAll(path)
+    case (Post, Root / "dts" / "api" / "files") => cf andThen tokenFilter andThen extractBytes("/api/files")
+    case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cf andThen
       tokenFilter andThen
       extractBytes("/api/files/" + fileId + "/extractions")
-    case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cf andThen
       tokenFilter andThen
       extractBytes("/api/extractions/upload_file")
-    case (Post, Root / "dts" / "api" / "extractions" / "upload_url") =>
-      cors andThen
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => cf andThen
       tokenFilter andThen
       extractURL("/api/extractions/upload_url")
-    case (_, "dts" /: path) => cors andThen tokenFilter andThen clowderCatchAll(path)
+    case (_, "dts" /: path) => cf andThen tokenFilter andThen clowderCatchAll(path)
     case (Get, Root / "ok") => ok
-    case (Post, Root / "keys") => cors andThen userAuth andThen Auth.createApiKey()
-    case (Delete, Root / "keys" / key) => cors andThen userAuth andThen Auth.deleteApiKey(key)
-    case (Post, Root / "keys" / key / "tokens") => cors andThen Auth.newAccessToken(UUID.fromString(key))
-    case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
-    case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
-    case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
-    case (Get, Root / "events" / eventId) => cors andThen tokenFilter andThen event(eventId)
-    case (Get, Root / "events") => cors andThen tokenFilter andThen events()
-    case (Get, Root / "stats") => cors andThen stats()
-    case (Post, Root / "dw" / "provenance") => cors andThen tokenFilter andThen datawolfPath("/browndog/provenance")
-    case (Get, Root / "extractors") => cors andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
-    case (Get, Root / "swagger.json") => cors andThen swagger
+    case (Post, Root / "keys") => cf andThen userAuth andThen Auth.createApiKey()
+    case (Delete, Root / "keys" / key) => cf andThen userAuth andThen Auth.deleteApiKey(key)
+    case (Post, Root / "keys" / key / "tokens") => cf andThen Auth.newAccessToken(UUID.fromString(key))
+    case (Get, Root / "tokens" / token) => cf andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (Delete, Root / "tokens" / token) => cf andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
+    case (Get, Root / "crowd" / "session") => cf andThen Crowd.session()
+    case (Get, Root / "events" / eventId) => cf andThen tokenFilter andThen event(eventId)
+    case (Get, Root / "events") => cf andThen tokenFilter andThen events()
+    case (Get, Root / "stats") => cf andThen stats()
+    case (Post, Root / "dw" / "provenance") => cf andThen tokenFilter andThen datawolfPath("/browndog/provenance")
+    case (Get, Root / "extractors") => cf andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
+    case (Get, Root / "swagger.json") => cf andThen swagger
     case _ => notFound
   }
 
