@@ -406,8 +406,9 @@ object Server extends TwitterServer {
   def redirect(location: String): Service[Request, Response] = {
     log.debug("[Endpoint] Redirecting to " + location)
     Service.mk { (req: Request) =>
-      val r = Response(Http11, Status.MovedPermanently)
+      val r = Response(Http11, Status.Found)
       r.headerMap.set(Fields.Location, location)
+      r.headerMap.set(Fields.CacheControl, "no-cache")
       Future.value(r)
     }
   }
