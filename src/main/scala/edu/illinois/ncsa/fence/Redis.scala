@@ -200,12 +200,12 @@ object Redis {
       StringToBuf(stats+"tokens")
     ))
     statsRedis.map { s =>
-      val conversionsBytes = BufToString(s(0).getOrElse(Buf.Empty)).toInt
-      val extractionBytes = BufToString(s(1).getOrElse(Buf.Empty)).toInt
-      val conversionsNum = BufToString(s(2).getOrElse(Buf.Empty)).toInt
-      val extractionsNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
-      val keysNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
-      val tokensNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
+      val conversionsBytes = BufToString(s(0).getOrElse(Buf.Empty)).toLong
+      val extractionBytes = BufToString(s(1).getOrElse(Buf.Empty)).toLong
+      val conversionsNum = BufToString(s(2).getOrElse(Buf.Empty)).toLong
+      val extractionsNum = BufToString(s(3).getOrElse(Buf.Empty)).toLong
+      val keysNum = BufToString(s(3).getOrElse(Buf.Empty)).toLong
+      val tokensNum = BufToString(s(3).getOrElse(Buf.Empty)).toLong
       Stats(BytesStats(conversionsBytes, extractionBytes), conversionsNum, extractionsNum, keysNum, tokensNum)
     }
   }
