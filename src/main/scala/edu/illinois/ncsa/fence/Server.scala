@@ -374,7 +374,8 @@ object Server extends TwitterServer {
     Service.mk { (req: Request) =>
       val since = req.params.get("since")
       val until = req.params.get("until")
-      Redis.getEvents(since, until).flatMap { events =>
+      val limit = req.params.getLongOrElse("limit", 1000)
+      Redis.getEvents(since, until, limit).flatMap { events =>
         val json = Jackson.stringToJSON(events)
         val r = Response()
         r.setContentTypeJson()
