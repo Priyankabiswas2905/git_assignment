@@ -3,11 +3,6 @@
   file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg
   output: Human Face Automatically Detected
 -
-  skip: commented out, does not work always?
-  description: Test ncsa.cv.face extractor for a false positive
-  file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/DSCN0524.preview.JPG
-  output: Human Face Automatically Detected
--
   description: Test ncsa.cv.eyes
   file_url: http://browndog.ncsa.illinois.edu/examples/isda.jpg
   output: Human Eyes Automatically Detected
@@ -31,16 +26,6 @@
   description: Test ncsa.nlp.summary
   file_url: http://browndog.ncsa.illinois.edu/examples/peter.txt
   output: http://browndog.ncsa.illinois.edu/examples/outputs/peter.json
--
-  skip: periodic variations in ocr output
-  description: Test ncsa.image.ocr
-  file_url: http://browndog.ncsa.illinois.edu/examples/ncsa.jpg
-  output: http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.jpg.json
--
-  skip: simpler image, however, still has period variations in ocr output
-  description: Test ncsa.image.ocr
-  file_url: http://browndog.ncsa.illinois.edu/examples/cache/isdatools_banner2.png
-  output: The ISDA Tools for Digital Preservation
 -
   description: Test ncsa.image.ocr
   file_url: http://browndog.ncsa.illinois.edu/examples/browndog.png
