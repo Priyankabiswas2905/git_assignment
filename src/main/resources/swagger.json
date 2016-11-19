@@ -3,11 +3,11 @@
     "info": {
         "title": "Brown Dog API",
         "description": "Documentation for the [Brown Dog](http://browndog.ncsa.illinois.edu/) API",
-        "termsOfService": "http://browndog.ncsa.illinois.edu/terms",
+        "termsOfService": "http://browndog.ncsa.illinois.edu",
         "contact": {
             "name": "Brown Dog Support",
-            "url": "https://hipchat.ncsa.illinois.edu/g4t6TnI5s",
-            "email": "browndog@ncsa.illinois.edu"
+            "url": "https://opensource.ncsa.illinois.edu/confluence/questions/topics/41156618/brown-dog",
+            "email": "sbrad77@illinois.edu"
         },
         "license": {
             "name": "University of Illinois/NCSA Open Source License",
@@ -65,7 +65,7 @@
         "/keys/{key}/tokens": {
             "post": {
                 "summary": "Create a new access token from api key",
-                "description": "Most endpoints require a token. API keys are unique and never expire. \nUsers can create as many tokens as they want for each key they have. \nTokens expire after 24 hours. After that a new token will have to be created.\n",
+                "description": "Most endpoints require a token. API keys are unique and never expire. \nUsers, however, can create as many tokens as they want which are in turn associated with their key. \nTokens expire after 24 hours. After that a new token will have to be created.\n",
                 "tags": [
                     "Authorization"
                 ],
@@ -231,8 +231,8 @@
         },
         "/dap/inputs": {
             "get": {
-                "summary": "List all input formats that can be accepted",
-                "description": "List all input formats that can be accepted",
+                "summary": "List all input formats that can be accepted. Limit the number of hops allowed by setting chain parameter, e.g. ?chain=2",
+                "description": "List all input formats that can be accepted. Limit the number of hops allowed by setting chain parameter, e.g. ?chain=2",
                 "tags": [
                     "Conversions"
                 ],
@@ -315,6 +315,46 @@
                 "responses": {
                     "200": {
                         "description": "An array of available output file formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/convert/{output_format}": {
+            "get": {
+                "summary": "List all input formats that can reach the specified output format",
+                "description": "List all input formats that can reach the specified output format",
+                "tags": [
+                    "Conversions"
+                ],
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output file format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available input file formats",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -425,6 +465,50 @@
                 }
             }
         },
+        "/dap/path/{output_format}/{input_format}": {
+            "get": {
+                "summary": "Return the conversion path that would be used for this conversion",
+                "description": "Return the conversion path that would be used for this conversion\n",
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output file format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "input_format",
+                        "in": "path",
+                        "description": "Input file format.  For example sid.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Optimal conversion path.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
         "/dap/software": {
             "get": {
                 "summary": "List all available conversion software",
@@ -451,7 +535,84 @@
                 }
             }
         },
-        "/dap/software/{software}/convert/{output_format}/{file_url}": {
+        "/dap/software/{software}": {
+            "get": {
+                "summary": "List all output formats available for this software",
+                "description": "List all output formats available for this software\n",
+                "parameters": [
+                    {
+                        "name": "software",
+                        "in": "path",
+                        "description": "Software name.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available output formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/software/{software}/{output_format}": {
+            "get": {
+                "summary": "List all input formats available for this software",
+                "description": "List all input formats available for this software\n",
+                "parameters": [
+                    {
+                        "name": "software",
+                        "in": "path",
+                        "description": "Software name.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available input formats",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/software/{software}/{output_format}/{file_url}": {
             "get": {
                 "summary": "Convert the specified file to the requested output format using the specified software",
                 "description": "Convert the specified file to the requested output format using the specified software\n",
@@ -500,7 +661,7 @@
                 }
             }
         },
-        "/dap/software/{software}/convert/{output_format}": {
+        "/dap/software/{software}/{output_format}": {
             "post": {
                 "summary": "Convert the uploaded file to the requested output format using the specified software",
                 "description": "Convert the uploaded file to the requested output format using the specified software\n",
@@ -552,6 +713,32 @@
                 "responses": {
                     "200": {
                         "description": "An array of available conversion software servers",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/supported_input_types": {
+            "get": {
+                "summary": "Lists the input file format supported by currently running extractors",
+                "description": "Lists the input file format supported by currently running extractors\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of available input file formats",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -646,32 +833,6 @@
                         "description": "File id",
                         "schema": {
                             "type": "string"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/dts/api/extractions/supported_input_types": {
-            "get": {
-                "summary": "Lists the input file format supported by currently running extractors",
-                "description": "Lists the input file format supported by currently running extractors\n",
-                "tags": [
-                    "Extractions"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An array of available input file formats",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
                         }
                     },
                     "default": {
@@ -868,32 +1029,6 @@
                 }
             }
         },
-        "/dts/api/extractions/server_ips": {
-            "get": {
-                "summary": "Lists servers IPs running the extractors",
-                "description": "Lists servers IPs running the extractors\n",
-                "tags": [
-                    "Extractions"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An array of server IPs",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
-            }
-        },
         "/dts/api/extractors": {
             "get": {
                 "summary": "Lists the past and present registered extractors",
@@ -971,6 +1106,94 @@
                     }
                 }
             }
+        },
+        "/extractors": {
+            "get": {
+                "summary": "List all extractors that would be executed for the given file type specified in the parameters, e.g. ?file_type=image/jpeg",
+                "description": "List all extractors that would be executed for the given file type specified in the parameters, e.g. ?filey_type-image/jpeg\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A list of extractors",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dts/api/extractions/servers_ips": {
+            "get": {
+                "summary": "Lists servers hosting running extractors",
+                "description": "Lists servers hosting running extractors\n",
+                "tags": [
+                    "Extractions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "An array of server IPs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        }
+        "/dw/provenance": {
+            "get": {
+                "summary": "Display an editable workflow for a given transformation",
+                "description": "Display an editable workflow for a given transformation\n",
+                "tags": [
+                    "Provenance"
+                ],
+                "parameters": [
+                    {
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/SubmissionToDataWolf"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A workflow",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1029,6 +1252,15 @@
                 "extractor": {
                     "type": "string",
                     "description": "Extractor id, for example ncsa.image.metadata"
+                }
+            }
+        },
+        "SubmissionToDW": {
+            "type": "object",
+            "properties": {
+                "file": {
+                    "type": "string",
+                    "description": "File id, for example URL to DAP output or file ID for DTS input"
                 }
             }
         },
