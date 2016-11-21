@@ -369,53 +369,7 @@
                         }
                     }
                 }
-            }
-        },
-        "/dap/convert/{output_format}/{file_url}": {
-            "get": {
-                "summary": "Convert the specified file to the requested output format",
-                "description": "Convert the specified file to the requested output format\n",
-                "security": [
-                    {
-                        "token": []
-                    }
-                ],
-                "parameters": [
-                    {
-                        "name": "output_format",
-                        "in": "path",
-                        "description": "Output file format. For example jpg.",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "name": "file_url",
-                        "in": "path",
-                        "description": "Encoded url of file we want to download and convert.",
-                        "required": true,
-                        "type": "string"
-                    }
-                ],
-                "tags": [
-                    "Conversions"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Link to converted file",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected error",
-                        "schema": {
-                            "$ref": "#/definitions/Error"
-                        }
-                    }
-                }
-            }
-        },
-        "/dap/convert/{output_format}": {
+            },
             "post": {
                 "summary": "Convert the uploaded file to the requested output format",
                 "description": "Convert the uploaded file to the requested output format\n",
@@ -454,6 +408,50 @@
                             "items": {
                                 "type": "string"
                             }
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected error",
+                        "schema": {
+                            "$ref": "#/definitions/Error"
+                        }
+                    }
+                }
+            }
+        },
+        "/dap/convert/{output_format}/{file_url}": {
+            "get": {
+                "summary": "Convert the specified file to the requested output format",
+                "description": "Convert the specified file to the requested output format\n",
+                "security": [
+                    {
+                        "token": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "output_format",
+                        "in": "path",
+                        "description": "Output file format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "file_url",
+                        "in": "path",
+                        "description": "Encoded url of file we want to download and convert.",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "tags": [
+                    "Conversions"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Link to converted file",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "default": {
@@ -610,12 +608,10 @@
                         }
                     }
                 }
-            }
-        },
-        "/dap/software/{software}/{output_format}/{file_url}": {
-            "get": {
-                "summary": "Convert the specified file to the requested output format using the specified software",
-                "description": "Convert the specified file to the requested output format using the specified software\n",
+            },
+            "post": {
+                "summary": "Convert the uploaded file to the requested output format using the specified software",
+                "description": "Convert the uploaded file to the requested output format using the specified software\n",
                 "parameters": [
                     {
                         "name": "software",
@@ -628,13 +624,6 @@
                         "name": "output_format",
                         "in": "path",
                         "description": "Output format. For example jpg.",
-                        "required": true,
-                        "type": "string"
-                    },
-                    {
-                        "name": "file_url",
-                        "in": "path",
-                        "description": "URL encoded remote file URL",
                         "required": true,
                         "type": "string"
                     }
@@ -661,10 +650,10 @@
                 }
             }
         },
-        "/dap/software/{software}/{output_format}": {
-            "post": {
-                "summary": "Convert the uploaded file to the requested output format using the specified software",
-                "description": "Convert the uploaded file to the requested output format using the specified software\n",
+        "/dap/software/{software}/{output_format}/{file_url}": {
+            "get": {
+                "summary": "Convert the specified file to the requested output format using the specified software",
+                "description": "Convert the specified file to the requested output format using the specified software\n",
                 "parameters": [
                     {
                         "name": "software",
@@ -677,6 +666,13 @@
                         "name": "output_format",
                         "in": "path",
                         "description": "Output format. For example jpg.",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "file_url",
+                        "in": "path",
+                        "description": "URL encoded remote file URL",
                         "required": true,
                         "type": "string"
                     }
