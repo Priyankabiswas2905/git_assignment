@@ -9,3 +9,4 @@ ruamel.ordereddict==0.4.9
 ruamel.yaml==0.12.5
 typing==3.5.2.2
 xmltodict==0.10.2
+pytest-rerunfailures

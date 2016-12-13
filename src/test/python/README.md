@@ -12,7 +12,13 @@ pip install -r requirements.txt
 Run tests from the command line (or use an IDE):
 
 ```
-pytest --host https://bd-api.ncsa.illinois.edu --username yourusernamehere --password yourpasswordhere --junitxml=results.xml
+pytest --host https://bd-api.ncsa.illinois.edu --username yourusernamehere --password yourpasswordhere --junitxml=results.xml (--retry numberofretry)
+```
+
+Optional arguments
+
+```
+--reruns numberofrerun
 ```
 
 Conversions inputs are stored in `test_conversion_data.yml` and in `test_extraction_data.yml`. Results are stored in `results.xml`.
