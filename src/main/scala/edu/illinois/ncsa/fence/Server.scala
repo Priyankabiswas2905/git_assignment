@@ -424,7 +424,7 @@ object Server extends TwitterServer {
         case Some(e: Map[String,Any]) => JSONObject(e + ("fence" -> fenceURL))
         case _ => prevBody
       }
-      val newPathWithParameters = path + getURIParams(req)
+      val newPathWithParameters = getServiceContextPath("dw") + path + getURIParams(req)
       val newReq = Request(Http11, Post, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
@@ -434,7 +434,7 @@ object Server extends TwitterServer {
       val body = bodyMap.toString
       newReq.setContentString(body)
       newReq.headerMap.set(Fields.ContentLength, body.toString.length.toString)
-      newReq.headerMap.set(Fields.Host, getServiceHost("dw"))
+      newReq.headerMap.set(Fields.Host, getServiceHost("dw") + getServiceContextPath("dw"))
       val rep = dw(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
