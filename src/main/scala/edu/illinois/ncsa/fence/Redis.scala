@@ -6,7 +6,7 @@ import java.util.{Calendar, UUID}
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.redis.Client
-import com.twitter.finagle.redis.protocol.ZInterval
+import com.twitter.finagle.redis.protocol.{Limit, ZInterval}
 import com.twitter.finagle.redis.util._
 import com.twitter.io.Buf
 import com.twitter.util.{Await, Future}
@@ -200,12 +200,12 @@ object Redis {
       StringToBuf(stats+"tokens")
     ))
     statsRedis.map { s =>
-      val conversionsBytes = BufToString(s(0).getOrElse(Buf.Empty)).toInt
-      val extractionBytes = BufToString(s(1).getOrElse(Buf.Empty)).toInt
-      val conversionsNum = BufToString(s(2).getOrElse(Buf.Empty)).toInt
-      val extractionsNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
-      val keysNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
-      val tokensNum = BufToString(s(3).getOrElse(Buf.Empty)).toInt
+      val conversionsBytes = BufToString(s(0).getOrElse(Buf.Empty)).toLong
+      val extractionBytes = BufToString(s(1).getOrElse(Buf.Empty)).toLong
+      val conversionsNum = BufToString(s(2).getOrElse(Buf.Empty)).toLong
+      val extractionsNum = BufToString(s(3).getOrElse(Buf.Empty)).toLong
+      val keysNum = BufToString(s(4).getOrElse(Buf.Empty)).toLong
+      val tokensNum = BufToString(s(5).getOrElse(Buf.Empty)).toLong
       Stats(BytesStats(conversionsBytes, extractionBytes), conversionsNum, extractionsNum, keysNum, tokensNum)
     }
   }
@@ -215,12 +215,11 @@ object Redis {
     *
     * @return a list of Events instances
     */
-  def getEvents(since: Option[String], until: Option[String]): Future[Seq[Map[String, String]]] = {
-    //    redis.keys(StringToBuf(eventsNamespace+"*")).flatMap { keys =>
+  def getEvents(since: Option[String], until: Option[String], limit: Long): Future[Seq[Map[String, String]]] = {
     val start = if (since.isEmpty) ZInterval("-inf") else ZInterval(since.get)
     val end = if (until.isEmpty) ZInterval("+inf") else ZInterval(until.get)
     redis.zRangeByScore(StringToChannelBuffer("events"),
-      start, end, false, None).flatMap {
+      start, end, false, Some(Limit(0, limit))).flatMap {
       case Left(keys) =>
         Future.Nil
       case Right(keys) =>

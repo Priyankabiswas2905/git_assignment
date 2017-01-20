@@ -1,5 +1,5 @@
 -
-  description: Test image conversion, JPEG-2000 to JPG
+  description: Test image conversion (chained), JPEG-2000 to BMP to JPG
   file_url: http://browndog.ncsa.illinois.edu/examples/0005.jp2
   output_type: jpg
 -
@@ -48,14 +48,13 @@
   output_type: jpg
 -
   description: Test PEcAn conversion, Ameriflux to netCDF-CF
-  file_url: http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml
+  file_url: http://browndog.ncsa.illinois.edu/examples/pecan/US-Dk3-2001-2003.xml
   output_type: pecan.zip
 -
   description: Test chained PEcAn conversion, Ameriflux to netCDF-CF to SIPNET format
-  file_url: http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml
+  file_url: http://browndog.ncsa.illinois.edu/examples/pecan/US-Dk3-2001-2003.xml
   output_type: clim
 -
-  skip: File is to big for software server, software server takes to long to process
   description: Test audio conversion, FLAC to MP3
   file_url: http://browndog.ncsa.illinois.edu/examples/cache/Hallelujah.flac
   output_type: mp3
@@ -71,13 +70,3 @@
   description: PGM to JPG
   file_url: https://isda.ncsa.illinois.edu/browndog/data/balloons.ascii.pgm
   output_type: jpg
--
-  skip: future test when needed converter deployed
-  description: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
-  file_url: http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
-  output_type: stp
--
-  skip: future test when needed converter deployed
-  description: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
-  file_url: http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
-  output_type: obj

@@ -23,7 +23,7 @@ def test_get_convert(host, api_token, timeout, conversion_data):
     output = conversion_data['output_type']
     output_path = '/tmp/' + str(0) + '_' + splitext(basename(input_filename))[0] + '.' + output
     r = convert_by_url(endpoint, api_token, input_filename, output, int(timeout))
-    if r and r.status_code == 200:
+    if r.status_code == 200:
         print "Output path     :", output_path
         print "File url        :", r.text
         if basename(output_path):
@@ -38,12 +38,9 @@ def test_get_convert(host, api_token, timeout, conversion_data):
         finally:
             if os.path.isfile(filename):
                 os.remove(filename)
-    elif r:
+    else:
         print "Error converting file", r.status_code
         assert False, "Error retrieving file : %d - %s" % (r.status_code, r.text)
-    else:
-        print "Error converting file"
-        assert False, "Timeout retrieving file."
 
 
 def convert_by_url(endpoint, api_token, input_filename, output, timeout):
@@ -51,10 +48,4 @@ def convert_by_url(endpoint, api_token, input_filename, output, timeout):
     headers = {'Authorization': api_token, 'Accept': 'text/plain'}
     api_call = endpoint + '/convert/' + output + '/' + urllib.quote_plus(input_filename)
     print "API Call        :", api_call
-
-    stoptime = time.time() + timeout
-    while stoptime > time.time():
-        r = requests.get(api_call, headers=headers, timeout=timeout)
-        if r.status_code != 404:
-            return r
-    return None
+    return requests.get(api_call, headers=headers, timeout=timeout)

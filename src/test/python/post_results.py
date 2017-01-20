@@ -52,8 +52,10 @@ def main():
                 if 'OSError: ' in logmsg['message']:
                     logmsg['message'] = re.sub(r".*E +(OSError: .*)  [^ ]*: OSError.*", r"\1", logmsg['message'])
 
-            # hide some private information
+            # hide some private information, combine array into string
             for key in logmsg:
+                if isinstance(logmsg[key], list):
+                    logmsg[key] = "\n".join(logmsg[key])
                 if 'username' in str(logmsg[key]):
                     logmsg[key] = re.sub(r"username = '[^']*'", "username = 'username'", logmsg[key])
                 if 'password' in str(logmsg[key]):

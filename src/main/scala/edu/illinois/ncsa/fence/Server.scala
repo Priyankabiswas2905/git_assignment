@@ -1,11 +1,11 @@
 package edu.illinois.ncsa.fence
 
-import java.net.URLDecoder
+import java.net.{URL, URLDecoder}
 import java.util.UUID
 
 import com.twitter.finagle.http.Method.{Delete, Get, Post}
 import com.twitter.finagle.http.Version.Http11
-import com.twitter.finagle.http._
+import com.twitter.finagle.http.{Request, _}
 import com.twitter.finagle.http.filter.Cors
 import com.twitter.finagle.http.path.{Path, _}
 import com.twitter.finagle.http.service.RoutingService
@@ -17,7 +17,9 @@ import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import edu.illinois.ncsa.fence.models.Stats
-import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, Jackson}
+import edu.illinois.ncsa.fence.util.GatewayHeaders.GatewayHostHeaderFilter
+import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, GatewayHeaders, Jackson}
+
 import scala.util.parsing.json.JSON
 import scala.util.parsing.json.JSONObject
 
@@ -26,18 +28,20 @@ import scala.util.parsing.json.JSONObject
   */
 object Server extends TwitterServer {
 
+  /** Load configuration file using typesafehub config */
   private val conf = ConfigFactory.load()
 
-  val polyglot: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dap.url"))
+  /** https://opensource.ncsa.illinois.edu/bitbucket/projects/POL */
+  val polyglot = getService("dap")
 
-  val clowder: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dts.url"))
+  /** https://clowder.ncsa.illinois.edu/ */
+  val clowder = getService("dts")
 
-  val dw: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(conf.getString("dw.url"))
+  /** https://opensource.ncsa.illinois.edu/bitbucket/projects/WOLF */
+  val dw = getService("dw")
 
-  /** Filter to handle exceptions. Currently not used. **/
-  val handleExceptions = new HandleExceptions
-
-  val tokenFilter = new TokenFilter
+  /** https://opensource.ncsa.illinois.edu/bitbucket/projects/BD/repos/bd-aux-services/browse/extractor-info-fetcher */
+  val extractorsInfo = getService("extractorsinfo")
 
   /** Pick a provider for authenticating users. Currently local in configuration file or external in Atlassian Crowd **/
   val userAuth: SimpleFilter[Request, Response] = conf.getString("auth.provider") match {
@@ -78,6 +82,53 @@ object Server extends TwitterServer {
     }
   }
 
+  /** Return a url for the key prefix */
+  def getServiceURL(prefixKey: String): URL = {
+    val confval = conf.getString(prefixKey + ".url")
+    Try(new URL(confval)).getOrElse(new URL("http://" + confval))
+  }
+
+  /** Return host:port part of the key prefix */
+  def getServiceHost(prefixKey: String): String = {
+    val url = getServiceURL(prefixKey)
+    if (url.getPort == -1) {
+      url.getHost
+    } else {
+      s"${url.getHost}:${url.getPort}"
+    }
+  }
+
+  /** Create a service based on the key prefix, handles https */
+  def getService(prefixKey: String) = {
+    val url = getServiceURL(prefixKey)
+    if (url.getProtocol == "https") {
+      Http.client.withTls(url.getHost).withStreaming(enabled = true).newService(getServiceHost(prefixKey))
+    } else {
+      Http.client.withStreaming(enabled = true).newService(getServiceHost(prefixKey))
+    }
+  }
+
+  /** Return the context-path of the key prefix */
+  def getServiceContextPath(prefixKey: String): String = {
+    getServiceURL(prefixKey).getPath
+  }
+
+  /** Create a basic auth based on the key prefix */
+  def getServiceBasicAuth(prefixKey: String): String = {
+    val user = conf.getString(s"$prefixKey.user")
+    val password = conf.getString(s"$prefixKey.password")
+    val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+    "Basic " + encodedCredentials
+  }
+
+  /** Return the URI query parameters of the original request as a String.
+    * Eventually we might be more selective and remove certain parameters (such as token).
+    * @param originalReq original request from which to extract the query parameters
+    */
+  def getURIParams(originalReq: Request): String = {
+    Request.queryString(originalReq.params)
+  }
+
   /**
     * Forward any request on to Polyglot.
     * @param path path to forward to Polyglot
@@ -86,18 +137,16 @@ object Server extends TwitterServer {
     def apply(req: Request): Future[Response] = {
       log.debug("[Endpoint] Polyglot catch all")
       dapStats.incr()
-      val dapReq = Request(req.method, path.toString)
-      val user = conf.getString("dap.user")
-      val password = conf.getString("dap.password")
-      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      val newPathWithParameters = path + getURIParams(req)
+      val dapReq = Request(req.method, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Headers: $key -> $value")
           dapReq.headerMap.add(key, value)
         }
       }
-      dapReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
-      dapReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      dapReq.headerMap.set(Fields.Host, getServiceHost("dap"))
+      dapReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dap"))
       log.debug("Polyglot " + req)
       val rep = polyglot(dapReq)
       rep.flatMap { r =>
@@ -118,17 +167,15 @@ object Server extends TwitterServer {
     def apply(req: Request): Future[Response] = {
       log.debug("[Endpoint] Clowder catch all")
       dtsStats.incr()
-      val dtsReq = Request(req.method, path.toString)
-      val user = conf.getString("dts.user")
-      val password = conf.getString("dts.password")
-      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      val newPathWithParameters = getServiceContextPath("dts") + path + getURIParams(req)
+      val dtsReq = Request(req.method, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
           dtsReq.headerMap.add(key, value)
         }
       }
-      dtsReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      dtsReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dts"))
       log.debug("Clowder " + req)
       val rep = clowder(dtsReq)
       rep.flatMap { r =>
@@ -147,18 +194,16 @@ object Server extends TwitterServer {
   def extractBytes(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Streaming clowder upload " + path)
     Service.mk { (req: Request) =>
-      val newReq = Request(Http11, Post, path, req.reader)
-      val user = conf.getString("dts.user")
-      val password = conf.getString("dts.password")
-      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      val newPathWithParameters = getServiceContextPath("dts") + path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
           newReq.headerMap.add(key, value)
         }
       }
-      newReq.headerMap.set(Fields.Host, conf.getString("dts.url"))
-      newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      newReq.headerMap.set(Fields.Host, getServiceHost("dts"))
+      newReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dts"))
       val rep = clowder(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
@@ -167,7 +212,7 @@ object Server extends TwitterServer {
       }
       log.debug("Uploaded bytes for extraction " +  req.getLength())
       // log stats and events
-      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "extractions"
       Redis.storeEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
@@ -183,19 +228,16 @@ object Server extends TwitterServer {
   def extractURL(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Extract from url " + path)
     Service.mk { (req: Request) =>
-      // create new request against Clowder
-      val newReq = Request(Http11, Post, path, req.reader)
-      val user = conf.getString("dts.user")
-      val password = conf.getString("dts.password")
-      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      val newPathWithParameters = getServiceContextPath("dts") + path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
           newReq.headerMap.add(key, value)
         }
       }
-      newReq.headerMap.set(Fields.Host, conf.getString("dts.url"))
-      newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      newReq.headerMap.set(Fields.Host, getServiceHost("dts"))
+      newReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dts"))
       val rep = clowder(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
@@ -204,7 +246,7 @@ object Server extends TwitterServer {
       }
       log.debug(s"Uploaded $req.getLength() bytes for extraction ")
       // log stats and events
-      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "extractions"
       val fileurl = Clowder.extractFileURL(req)
       ExternalResources.contentLengthFromHead(fileurl, logKey)
@@ -222,18 +264,16 @@ object Server extends TwitterServer {
   def convertBytes(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Streaming polyglot upload " + path)
     Service.mk { (req: Request) =>
-      val newReq = Request(Http11, Post, path, req.reader)
-      val user = conf.getString("dap.user")
-      val password = conf.getString("dap.password")
-      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      val newPathWithParameters = path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
           newReq.headerMap.add(key, value)
         }
       }
-      newReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
-      newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      newReq.headerMap.set(Fields.Host, getServiceHost("dap"))
+      newReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dap"))
       val rep = polyglot(newReq)
       rep.flatMap { r =>
         val hostname = conf.getString("fence.hostname")
@@ -251,7 +291,7 @@ object Server extends TwitterServer {
       }
       log.debug("Uploaded bytes for conversion " +  req.getLength())
       // log events
-      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       Redis.storeEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
       Redis.increaseCounter(logKey)
@@ -269,20 +309,16 @@ object Server extends TwitterServer {
     val url = URLDecoder.decode(encodedUrl, "UTF-8")
     log.debug("[Endpoint] Convert " + url)
     Service.mk { (req: Request) =>
-      // new request
-      val path = "/convert/" + fileType + "/" + encodedUrl
-      val newReq = Request(Http11, Post, path, req.reader)
-      val user = conf.getString("dap.user")
-      val password = conf.getString("dap.password")
-      val encodedCredentials = Base64StringEncoder.encode(s"$user:$password".getBytes)
+      val newPathWithParameters = "/convert/" + fileType + "/" + encodedUrl + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           log.trace(s"Streaming upload header: $key -> $value")
           newReq.headerMap.add(key, value)
         }
       }
-      newReq.headerMap.set(Fields.Host, conf.getString("dap.url"))
-      newReq.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
+      newReq.headerMap.set(Fields.Host, getServiceHost("dap"))
+      newReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dap"))
       val rep = polyglot(newReq)
       rep.flatMap { r =>
         val hostname = conf.getString("fence.hostname")
@@ -299,7 +335,7 @@ object Server extends TwitterServer {
         Future.value(r)
       }
       // log stats and events
-      val username = req.headerMap.get(Auth.usernameHeader).getOrElse("noUserFoundInHeader")
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       ExternalResources.contentLengthFromHead(url, logKey)
       Redis.storeEvent("conversion", url, username, req.remoteSocketAddress.toString)
@@ -338,7 +374,8 @@ object Server extends TwitterServer {
     Service.mk { (req: Request) =>
       val since = req.params.get("since")
       val until = req.params.get("until")
-      Redis.getEvents(since, until).flatMap { events =>
+      val limit = req.params.getLongOrElse("limit", 1000)
+      Redis.getEvents(since, until, limit).flatMap { events =>
         val json = Jackson.stringToJSON(events)
         val r = Response()
         r.setContentTypeJson()
@@ -370,8 +407,9 @@ object Server extends TwitterServer {
   def redirect(location: String): Service[Request, Response] = {
     log.debug("[Endpoint] Redirecting to " + location)
     Service.mk { (req: Request) =>
-      val r = Response(Http11, Status.MovedPermanently)
+      val r = Response(Http11, Status.Found)
       r.headerMap.set(Fields.Location, location)
+      r.headerMap.set(Fields.CacheControl, "no-cache")
       Future.value(r)
     }
   }
@@ -386,16 +424,17 @@ object Server extends TwitterServer {
         case Some(e: Map[String,Any]) => JSONObject(e + ("fence" -> fenceURL))
         case _ => prevBody
       }
-      val newReq = Request(Http11, Post, path)
+      val newPathWithParameters = getServiceContextPath("dw") + path + getURIParams(req)
+      val newReq = Request(Http11, Post, newPathWithParameters)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
           newReq.headerMap.add(key, value)
         }
       }
-      val body = bodyMap.toString()
+      val body = bodyMap.toString
       newReq.setContentString(body)
       newReq.headerMap.set(Fields.ContentLength, body.toString.length.toString)
-      newReq.headerMap.set(Fields.Host, conf.getString("dw.url"))
+      newReq.headerMap.set(Fields.Host, getServiceHost("dw") + getServiceContextPath("dw"))
       val rep = dw(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
@@ -406,39 +445,106 @@ object Server extends TwitterServer {
     }
   }
 
-  // CORS filter
+  /**
+    * Proxy to Extractors Info service.
+    *
+    * @param path path fragment
+    */
+  def extractorsInfoPath(path: String) = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
+      log.debug("[Endpoint] Extractors info")
+      // return error response if query parameter is not provided
+      if (!req.params.contains("file_type")) {
+        return Future.value(missingParam("file_type"))
+      }
+      val newPathWithParameters = path + getURIParams(req)
+      val eiReq = Request(req.method, newPathWithParameters)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.trace(s"Extractors Info Header: $key -> $value")
+          eiReq.headerMap.add(key, value)
+        }
+      }
+      log.debug("Extractors Info " + req)
+      val rep = extractorsInfo(eiReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
+    }
+  }
+
+  /** Create a Bad Request response in cases where a query parameter is missing.
+    *
+    * @param param missing query parameter
+    * @return a Bad Request response with message
+    */
+  def missingParam(param: String): Response = {
+    val error = Response(Version.Http11, Status.BadRequest)
+    error.setContentTypeJson()
+    error.setContentString(s"""{"status":"error", "message":"Parameter '$param' required"}""")
+    error
+  }
+
+  /** Swagger documentation */
+  def swagger(): Service[Request, Response] = {
+    log.debug("Swagger documentation")
+    Service.mk { (req: Request) =>
+      val r = Response()
+      val text = utils.Files.readResourceFile("/swagger.json")
+      r.setContentString(text)
+      Future.value(r)
+    }
+  }
+
+  /** Filter to authorize token */
+  val tokenFilter = new TokenFilter
+
+  /** CORS Filter */
   val cors = new Cors.HttpFilter(Cors.UnsafePermissivePolicy)
+
+  /** Outside URL header */
+  val gatewayURLFilter = new GatewayHostHeaderFilter
+
+  /** Filter to handle exceptions. Currently not used. **/
+  val handleExceptions = new HandleExceptions
+
+  /** Common filters for all endpoints */
+  val cf = cors andThen gatewayURLFilter
 
   /** Application router **/
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root) => redirect(conf.getString("docs.root"))
-    case (Get, Root / "dap" / "alive") => cors andThen tokenFilter andThen polyglotCatchAll(Path("alive"))
-    case (_, Root / "dap" / "convert" / fileType / path) =>  cors andThen tokenFilter andThen convertURL(fileType, path)
-    case (_, "dap" /: "convert" /: path) =>  cors andThen tokenFilter andThen convertBytes("/convert" + path)
-    case (_, "dap" /: path) => cors andThen tokenFilter andThen polyglotCatchAll(path)
-    case (Post, Root / "dts" / "api" / "files") => cors andThen tokenFilter andThen extractBytes("/api/files")
-    case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cors andThen
+    case (Get, Root / "dap" / "alive") => cf andThen tokenFilter andThen polyglotCatchAll(Path("alive"))
+    case (_, Root / "dap" / "convert" / fileType / path) =>  cf andThen tokenFilter andThen convertURL(fileType, path)
+    case (_, "dap" /: "convert" /: path) =>  cf andThen tokenFilter andThen convertBytes("/convert" + path)
+    case (_, "dap" /: path) => cf andThen tokenFilter andThen polyglotCatchAll(path)
+    case (Post, Root / "dts" / "api" / "files") => cf andThen tokenFilter andThen extractBytes("/api/files")
+    case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cf andThen
       tokenFilter andThen
       extractBytes("/api/files/" + fileId + "/extractions")
-    case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cors andThen
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cf andThen
       tokenFilter andThen
       extractBytes("/api/extractions/upload_file")
-    case (Post, Root / "dts" / "api" / "extractions" / "upload_url") =>
-      cors andThen
+    case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => cf andThen
       tokenFilter andThen
       extractURL("/api/extractions/upload_url")
-    case (_, "dts" /: path) => cors andThen tokenFilter andThen clowderCatchAll(path)
+    case (_, "dts" /: path) => cf andThen tokenFilter andThen clowderCatchAll(path)
     case (Get, Root / "ok") => ok
-    case (Post, Root / "keys") => cors andThen userAuth andThen Auth.createApiKey()
-    case (Delete, Root / "keys" / key) => cors andThen userAuth andThen Auth.deleteApiKey(key)
-    case (Post, Root / "keys" / key / "tokens") => cors andThen Auth.newAccessToken(UUID.fromString(key))
-    case (Get, Root / "tokens" / token) => cors andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
-    case (Delete, Root / "tokens" / token) => cors andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
-    case (Get, Root / "crowd" / "session") => cors andThen Crowd.session()
-    case (Get, Root / "events" / eventId) => cors andThen tokenFilter andThen event(eventId)
-    case (Get, Root / "events") => cors andThen tokenFilter andThen events()
-    case (Get, Root / "stats") => cors andThen stats()
-    case (Post, Root / "dw" / "provenance") => cors andThen tokenFilter andThen datawolfPath("/browndog/provenance")
+    case (Post, Root / "keys") => cf andThen userAuth andThen Auth.createApiKey()
+    case (Delete, Root / "keys" / key) => cf andThen userAuth andThen Auth.deleteApiKey(key)
+    case (Post, Root / "keys" / key / "tokens") => cf andThen Auth.newAccessToken(UUID.fromString(key))
+    case (Get, Root / "tokens" / token) => cf andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
+    case (Delete, Root / "tokens" / token) => cf andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
+    case (Get, Root / "crowd" / "session") => cf andThen Crowd.session()
+    case (Get, Root / "events" / eventId) => cf andThen tokenFilter andThen event(eventId)
+    case (Get, Root / "events") => cf andThen tokenFilter andThen events()
+    case (Get, Root / "stats") => cf andThen stats()
+    case (Post, Root / "dw" / "provenance") => cf andThen tokenFilter andThen datawolfPath("/browndog/provenance")
+    case (Get, Root / "extractors") => cf andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
+    case (Get, Root / "swagger.json") => cf andThen swagger
     case _ => notFound
   }
 
