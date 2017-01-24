@@ -9,6 +9,7 @@ import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.protocol.{Limit, ZInterval}
 import com.twitter.finagle.redis.util._
 import com.twitter.io.Buf
+import com.twitter.logging.Level
 import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
@@ -149,8 +150,13 @@ object Redis {
   }
 
   /** Increase a redis counter by key */
-  def increaseCounter(counter: String) {
+  def increaseStat(counter: String) {
     redis.incr(StringToBuf(stats+counter))
+  }
+
+  /** Decrease a redis counter by key */
+  def decreaseStat(counter: String) {
+    redis.decr(StringToBuf(stats+counter))
   }
 
   /** Increase a stats bytes counter by number of bytes */
@@ -181,7 +187,30 @@ object Redis {
     redis.hMSet(StringToChannelBuffer(eventNamespace+id), fields)
     // add event id to sorted set ordered by date
     redis.zAdd(StringToChannelBuffer("events"), millis.toDouble, StringToChannelBuffer(eventNamespace+id))
+    // quotas
+    logRequestsQuota(user)
+
     log.debug(s"Event $eventType on $resource at ${calendar.getTime} from $clientIP")
+  }
+
+  def logRequestsQuota(userId: String): Unit = {
+    log.setLevel(Level.DEBUG)
+    val key = userNamespace + userId + ":requests"
+    val counter = redis.get(StringToBuf(key))
+    counter.flatMap { count =>
+      count match {
+        case Some(k) =>
+          // if key was found decrease counter
+          log.debug(s"Key $key found. Decreasing counter.")
+          redis.decr(StringToBuf(key))
+        case None =>
+          // if key was not found add entry
+          val maxRequests = conf.getInt("quotas.requests.total")
+          val initialValue = StringToBuf((maxRequests - 1).toString)
+          log.debug(s"Key $key not found. Setting initial value to $initialValue")
+          redis.set(StringToBuf(key), initialValue)
+      }
+    }
   }
 
 
