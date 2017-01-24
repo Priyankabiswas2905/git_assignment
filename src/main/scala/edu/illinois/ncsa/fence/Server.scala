@@ -15,6 +15,7 @@ import com.twitter.util._
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
+import edu.illinois.ncsa.fence.Quotas.RequestsQuotasFilter
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import edu.illinois.ncsa.fence.models.Stats
 import edu.illinois.ncsa.fence.util.GatewayHeaders.GatewayHostHeaderFilter
@@ -216,7 +217,7 @@ object Server extends TwitterServer {
       val logKey = "extractions"
       Redis.storeEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
-      Redis.increaseCounter(logKey)
+      Redis.decreaseStat(logKey)
       rep
     }
   }
@@ -252,7 +253,7 @@ object Server extends TwitterServer {
       ExternalResources.contentLengthFromHead(fileurl, logKey)
       Redis.storeEvent("extraction", fileurl, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
-      Redis.increaseCounter(logKey)
+      Redis.decreaseStat(logKey)
       rep
     }
   }
@@ -294,7 +295,7 @@ object Server extends TwitterServer {
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       Redis.storeEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
-      Redis.increaseCounter(logKey)
+      Redis.decreaseStat(logKey)
       Redis.logBytes(logKey, req.getLength())
       rep
     }
@@ -340,7 +341,7 @@ object Server extends TwitterServer {
       ExternalResources.contentLengthFromHead(url, logKey)
       Redis.storeEvent("conversion", url, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
-      Redis.increaseCounter(logKey)
+      Redis.decreaseStat(logKey)
       rep
     }
   }
@@ -511,6 +512,9 @@ object Server extends TwitterServer {
   /** Filter to handle exceptions. Currently not used. **/
   val handleExceptions = new HandleExceptions
 
+  /** Filter to handle user quotas */
+  val checkQuotas = new RequestsQuotasFilter
+
   /** Common filters for all endpoints */
   val cf = cors andThen gatewayURLFilter
 
@@ -518,18 +522,21 @@ object Server extends TwitterServer {
   val router = RoutingService.byMethodAndPathObject[Request] {
     case (Get, Root) => redirect(conf.getString("docs.root"))
     case (Get, Root / "dap" / "alive") => cf andThen tokenFilter andThen polyglotCatchAll(Path("alive"))
-    case (_, Root / "dap" / "convert" / fileType / path) =>  cf andThen tokenFilter andThen convertURL(fileType, path)
-    case (_, "dap" /: "convert" /: path) =>  cf andThen tokenFilter andThen convertBytes("/convert" + path)
+    case (_, Root / "dap" / "convert" / fileType / path) =>  cf andThen tokenFilter andThen checkQuotas andThen
+      convertURL(fileType, path)
+    case (_, "dap" /: "convert" /: path) =>  cf andThen tokenFilter andThen checkQuotas andThen
+      convertBytes("/convert" + path)
     case (_, "dap" /: path) => cf andThen tokenFilter andThen polyglotCatchAll(path)
-    case (Post, Root / "dts" / "api" / "files") => cf andThen tokenFilter andThen extractBytes("/api/files")
+    case (Post, Root / "dts" / "api" / "files") => cf andThen tokenFilter andThen checkQuotas andThen
+      extractBytes("/api/files")
     case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cf andThen
-      tokenFilter andThen
+      tokenFilter andThen checkQuotas andThen
       extractBytes("/api/files/" + fileId + "/extractions")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cf andThen
-      tokenFilter andThen
+      tokenFilter andThen checkQuotas andThen
       extractBytes("/api/extractions/upload_file")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => cf andThen
-      tokenFilter andThen
+      tokenFilter andThen checkQuotas andThen
       extractURL("/api/extractions/upload_url")
     case (_, "dts" /: path) => cf andThen tokenFilter andThen clowderCatchAll(path)
     case (Get, Root / "ok") => ok
@@ -590,3 +597,4 @@ class HandleExceptions extends SimpleFilter[Request, Response] {
     }
   }
 }
+

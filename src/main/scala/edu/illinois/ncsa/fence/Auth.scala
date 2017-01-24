@@ -29,7 +29,7 @@ object Auth {
           case Some(buf) => {
             val keyFromRedis = BufToString(buf)
             val token = Redis.createToken(key)
-            Redis.increaseCounter("tokens")
+            Redis.decreaseStat("tokens")
             val res = Response(req.version, Status.Ok)
             res.contentType = "application/json;charset=UTF-8"
             res.content = Buf.Utf8(JsonConverter.writeToString(Map("token"->token)))
@@ -89,7 +89,7 @@ object Auth {
       BasicAuth.extractCredentials(req) match {
         case Some(cred) =>
           val apiKey = Redis.createApiKey(cred.username)
-          Redis.increaseCounter("keys")
+          Redis.decreaseStat("keys")
           val res = Response(req.version, Status.Ok)
           res.contentType = "application/json;charset=UTF-8"
           res.content = Buf.Utf8(JsonConverter.writeToString(Map("api-key"->apiKey)))
