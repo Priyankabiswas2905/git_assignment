@@ -1,32 +1,50 @@
+# This file lists all tests. The test should have the following fields:
+# - description : what is tests
+# - file_url : url to the actual test file
+# - extractor : the id of the extractor to test (if none is specified all extractors possible are called)
+# - output : the expected output that should be found in the metadata
+#
+# It is best if the extractor will react to messages on the extractors.<extractor_id> binding/queue. This
+# will result in shorter tests, and less chance of failures (see CATS-719). This also assumes correct metadata
+# returned by extractor with id X. If this is not the case don't specify extractor, however this could lead to
+# false negatives, and longer execution times.
 -
   description: Test ncsa.cv.face extractor for true positive
   file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg
-  output: Human Face Automatically Detected
+  extractor: ncsa.cv.faces
+  output: '"y":"141","x":"94","height":"153"'
 -
   description: Test ncsa.cv.eyes
   file_url: http://browndog.ncsa.illinois.edu/examples/isda.jpg
+  extractor: ncsa.cv.eyes
   output: Human Eyes Automatically Detected
 -
   description: Test ncsa.image.caltech101
   file_url: http://browndog.ncsa.illinois.edu/examples/caltech101/airplane.jpg
+  #extractor: ncsa.cv.caltech101
   output: http://browndog.ncsa.illinois.edu/examples/outputs/airplane.jpg.json
 -
   description: Test ncsa.image.caltech101
   file_url: http://browndog.ncsa.illinois.edu/examples/caltech101/llama.jpg
+  #extractor: ncsa.cv.caltech101
   output: http://browndog.ncsa.illinois.edu/examples/outputs/llama.jpg.json
 -
   description: Test ncsa.nlp.language
   file_url: http://browndog.ncsa.illinois.edu/examples/ncsa-deutsch.txt
+  extractor: ncsa.nlp.simplelanguage
   output: http://browndog.ncsa.illinois.edu/examples/outputs/ncsa-deutsch.json
 -
   description: Test ncsa.nlp.summary
   file_url: http://browndog.ncsa.illinois.edu/examples/ncsa.txt
+  extractor: ncsa.nlp.simplesummary
   output: http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.json
 -
   description: Test ncsa.nlp.summary
   file_url: http://browndog.ncsa.illinois.edu/examples/peter.txt
+  extractor: ncsa.nlp.simplesummary
   output: http://browndog.ncsa.illinois.edu/examples/outputs/peter.json
 -
   description: Test ncsa.image.ocr
   file_url: http://browndog.ncsa.illinois.edu/examples/browndog.png
-  output: The BrownDog project
+  extractor: ncsa.image.ocr
+  output: '"ocr_text": "The BrownDog project"'
