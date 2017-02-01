@@ -12,12 +12,12 @@
   description: Test ncsa.cv.face extractor for true positive
   file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg
   extractor: ncsa.cv.faces
-  output: '"y":"141","x":"94","height":"153"'
+  output: '"content": {"faces"'
 -
   description: Test ncsa.cv.eyes
   file_url: http://browndog.ncsa.illinois.edu/examples/isda.jpg
   extractor: ncsa.cv.eyes
-  output: Human Eyes Automatically Detected
+  output: '"content": {"eyes"'
 -
   description: Test ncsa.image.caltech101
   file_url: http://browndog.ncsa.illinois.edu/examples/caltech101/airplane.jpg
@@ -31,17 +31,17 @@
 -
   description: Test ncsa.nlp.language
   file_url: http://browndog.ncsa.illinois.edu/examples/ncsa-deutsch.txt
-  extractor: ncsa.nlp.simplelanguage
+  #extractor: ncsa.nlp.simplelanguage
   output: http://browndog.ncsa.illinois.edu/examples/outputs/ncsa-deutsch.json
 -
   description: Test ncsa.nlp.summary
   file_url: http://browndog.ncsa.illinois.edu/examples/ncsa.txt
-  extractor: ncsa.nlp.simplesummary
+  #extractor: ncsa.nlp.simplesummary
   output: http://browndog.ncsa.illinois.edu/examples/outputs/ncsa.json
 -
   description: Test ncsa.nlp.summary
   file_url: http://browndog.ncsa.illinois.edu/examples/peter.txt
-  extractor: ncsa.nlp.simplesummary
+  #extractor: ncsa.nlp.simplesummary
   output: http://browndog.ncsa.illinois.edu/examples/outputs/peter.json
 -
   description: Test ncsa.image.ocr
