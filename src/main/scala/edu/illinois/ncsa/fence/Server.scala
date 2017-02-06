@@ -217,7 +217,7 @@ object Server extends TwitterServer {
       val logKey = "extractions"
       Redis.storeEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
-      Redis.decreaseStat(logKey)
+      Redis.increaseStat(logKey)
       rep
     }
   }
@@ -253,7 +253,7 @@ object Server extends TwitterServer {
       ExternalResources.contentLengthFromHead(fileurl, logKey)
       Redis.storeEvent("extraction", fileurl, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
-      Redis.decreaseStat(logKey)
+      Redis.increaseStat(logKey)
       rep
     }
   }
@@ -295,7 +295,7 @@ object Server extends TwitterServer {
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       Redis.storeEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
-      Redis.decreaseStat(logKey)
+      Redis.increaseStat(logKey)
       Redis.logBytes(logKey, req.getLength())
       rep
     }
@@ -341,7 +341,7 @@ object Server extends TwitterServer {
       ExternalResources.contentLengthFromHead(url, logKey)
       Redis.storeEvent("conversion", url, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
-      Redis.decreaseStat(logKey)
+      Redis.increaseStat(logKey)
       rep
     }
   }
