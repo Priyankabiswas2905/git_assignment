@@ -1,4 +1,8 @@
 -
+  description: Test chi-analysis
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/head_hills.bil.zip
+  output: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/chi_analysis_output.json
+-
   description: Test ncsa.cv.face extractor for true positive
   file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg
   output: Human Face Automatically Detected
