@@ -550,7 +550,7 @@ object Server extends TwitterServer {
     case (Get, Root / "events") => cf andThen tokenFilter andThen events()
     case (Get, Root / "stats") => cf andThen stats()
     case (Post, Root / "dw" / "provenance") => cf andThen tokenFilter andThen datawolfPath("/browndog/provenance")
-    case (Get, Root / "extractors") => cf andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
+    case (_, Root / "extractors") => cf andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
     case (Get, Root / "swagger.json") => cf andThen swagger
     case _ => notFound
   }
