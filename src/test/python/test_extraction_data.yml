@@ -3,6 +3,10 @@
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/browse/extractors-river/tests/39-72.tif
   output: '"content": {"generated_file"'
 -
+  description: Test ncsa.arcgis.floodplain
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/floodplain_extractor/floodplain_data.zip
+  output: generated_dataset
+-
   description: Test ncsa.cv.face extractor for true positive
   file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg
   output: Human Face Automatically Detected
