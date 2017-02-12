@@ -1,8 +1,4 @@
 -
-  description: Test ncsa.cv.river extractor
-  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/browse/extractors-river/tests/39-72.tif
-  output: '"content": {"generated_file"'
--
   description: Test ncsa.cv.face extractor for true positive
   file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg
   output: Human Face Automatically Detected
@@ -34,3 +30,7 @@
   description: Test ncsa.image.ocr
   file_url: http://browndog.ncsa.illinois.edu/examples/browndog.png
   output: The BrownDog project
+#-
+#  description: Test ncsa.cv.river extractor
+#  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/browse/extractors-river/tests/39-72.tif
+#  output: '"content": {"generated_file"'
