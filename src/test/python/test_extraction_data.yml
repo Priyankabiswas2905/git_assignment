@@ -1,4 +1,8 @@
 -
+  description: Test ncsa.cv.meangrey
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/ncsa.jpg
+  output: "mean grayscale value": 92.37243547449613
+-
   description: Test ncsa.cv.face extractor for true positive
   file_url: http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/1452027_10152335650158975_1823125492_n.jpg
   output: Human Face Automatically Detected
