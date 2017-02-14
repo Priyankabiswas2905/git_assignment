@@ -1,4 +1,10 @@
 -
+ description: Converts between TIFF and BIL (zip) and FLT (zip)
+ skip: Not deployed on production yet
+ file_url: https://isda.ncsa.illinois.edu/browndog/data/gdal_converter/head_hills.tif
+ output_type: bil.zip
+
+-
   description: Test image conversion (chained), JPEG-2000 to BMP to JPG
   file_url: http://browndog.ncsa.illinois.edu/examples/0005.jp2
   output_type: jpg
