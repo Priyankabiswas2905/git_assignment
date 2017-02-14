@@ -1,5 +1,6 @@
 -
   description: Test ncsa.cv.meangrey
+  skip: Not deployed on production yet
   file_url: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/ncsa.jpg
   output: "mean grayscale value": 92.37243547449613
 -
