@@ -15,7 +15,7 @@ import com.twitter.util._
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
-import edu.illinois.ncsa.fence.Quotas.RequestsQuotasFilter
+import edu.illinois.ncsa.fence.Quotas.{RateLimitFilter, RequestsQuotasFilter}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import edu.illinois.ncsa.fence.models.Stats
 import edu.illinois.ncsa.fence.util.GatewayHeaders.GatewayHostHeaderFilter
@@ -515,28 +515,34 @@ object Server extends TwitterServer {
   /** Filter to handle user quotas */
   val checkQuotas = new RequestsQuotasFilter
 
+  /** Filter to handle rate limiting */
+  val rateLimit = new RateLimitFilter
+
+  val quotas = rateLimit andThen checkQuotas
+
   /** Common filters for all endpoints */
   val cf = cors andThen gatewayURLFilter
 
   /** Application router **/
   val router = RoutingService.byMethodAndPathObject[Request] {
+    case (Get, Root / "rate") => tokenFilter andThen rateLimit andThen ok
     case (Get, Root) => redirect(conf.getString("docs.root"))
     case (Get, Root / "dap" / "alive") => cf andThen tokenFilter andThen polyglotCatchAll(Path("alive"))
-    case (_, Root / "dap" / "convert" / fileType / path) =>  cf andThen tokenFilter andThen checkQuotas andThen
+    case (_, Root / "dap" / "convert" / fileType / path) =>  cf andThen tokenFilter andThen quotas andThen
       convertURL(fileType, path)
-    case (_, "dap" /: "convert" /: path) =>  cf andThen tokenFilter andThen checkQuotas andThen
+    case (_, "dap" /: "convert" /: path) =>  cf andThen tokenFilter andThen quotas andThen
       convertBytes("/convert" + path)
     case (_, "dap" /: path) => cf andThen tokenFilter andThen polyglotCatchAll(path)
-    case (Post, Root / "dts" / "api" / "files") => cf andThen tokenFilter andThen checkQuotas andThen
+    case (Post, Root / "dts" / "api" / "files") => cf andThen tokenFilter andThen quotas andThen
       extractBytes("/api/files")
     case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) => cf andThen
-      tokenFilter andThen checkQuotas andThen
+      tokenFilter andThen quotas andThen
       extractBytes("/api/files/" + fileId + "/extractions")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") => cf andThen
-      tokenFilter andThen checkQuotas andThen
+      tokenFilter andThen quotas andThen
       extractBytes("/api/extractions/upload_file")
     case (Post, Root / "dts" / "api" / "extractions" / "upload_url") => cf andThen
-      tokenFilter andThen checkQuotas andThen
+      tokenFilter andThen quotas andThen
       extractURL("/api/extractions/upload_url")
     case (_, "dts" /: path) => cf andThen tokenFilter andThen clowderCatchAll(path)
     case (Get, Root / "ok") => ok

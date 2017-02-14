@@ -3,6 +3,7 @@ package edu.illinois.ncsa.fence
 import _root_.java.lang.{Long => JLong}
 import java.util.{Calendar, UUID}
 
+import com.twitter.common.base.Command
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.redis.Client
@@ -218,7 +219,7 @@ object Redis {
   /**
     * Check if user requests quota is above zero.
     *
-    * @param userId the user ID to check the quota for
+    * @param userId the user ID
     * @return true if user quota > 0 and false if not
     */
   def checkRequestsQuota(userId: String): Future[Boolean] = {
@@ -247,6 +248,37 @@ object Redis {
     val initialValue = StringToBuf(maxRequests.toString)
     log.debug(s"Quotas for user $userId not found. Setting default quota $key to $maxRequests")
     redis.set(StringToBuf(key), initialValue)
+  }
+
+  /**
+    * Check if user has done more than n requests over t time.
+    *
+    * @param userId the user ID
+    * @return true if user is below rate limit, false if not
+    */
+  def checkRateLimit(userId: String): Future[Boolean] = {
+    val key = userNamespace + userId + ":rate"
+    val maxCount = conf.getInt("quotas.requests.rate.count")
+    val seconds = conf.getLong("quotas.requests.rate.period")
+    redis.get(StringToBuf(key)).flatMap {
+      case Some(current) =>
+        val cur = BufToString(current).toInt
+        log.debug(s"Rate limit count: $cur / $maxCount")
+        // increment key and check value
+        redis.incr(StringToBuf(key)).flatMap {count =>
+          if (count > maxCount) {
+            Future.value(false)
+          } else {
+            Future.value(true)
+          }
+        }
+      case None =>
+        log.debug(s"Rate limit starting new window expiring in $seconds seconds")
+        // the window has expired, we start a new one
+        redis.incr(StringToBuf(key))
+        redis.setEx(StringToBuf(key), seconds, StringToBuf("1"))
+        Future.value(true)
+    }
   }
 
   /**
