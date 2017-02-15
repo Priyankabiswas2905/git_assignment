@@ -1,14 +1,12 @@
 package edu.illinois.ncsa.fence
 
-import java.util.concurrent.TimeUnit
+import java.net.URLEncoder
 
 import com.twitter.finagle.http._
-import com.twitter.finagle.service.TimeoutFilter
 import com.twitter.finagle.{Http, Service, SimpleFilter}
 import com.twitter.util._
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
-import com.twitter.conversions.time._
 
 /**
   * Talk to Atlassian Crowd to authenticate users.
@@ -90,7 +88,8 @@ object Crowd {
     log.trace("Posting to /crowd/rest/usermanagement/latest/authentication?username=USERNAME")
     val crowdUsername = conf.getString("crowd.user")
     val crowdPassword = conf.getString("crowd.password")
-    val req = Request(Method.Post, "/crowd/rest/usermanagement/latest/authentication?username=" + username)
+    val req = Request(Method.Post, "/crowd/rest/usermanagement/latest/authentication?username=" +
+      URLEncoder.encode(username, "UTF-8"))
     val encodedCredentials = Base64StringEncoder.encode(s"$crowdUsername:$crowdPassword".getBytes)
     req.headerMap.set(Fields.Authorization, "Basic " + encodedCredentials)
     val body =

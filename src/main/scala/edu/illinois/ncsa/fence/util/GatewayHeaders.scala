@@ -13,7 +13,7 @@ object GatewayHeaders {
   /** Load configuration file using typesafehub config */
   private val conf = ConfigFactory.load()
 
-  // TODO Change ot BD-Username
+  // TODO Change to BD-Username
   val usernameHeader = "X-BD-Username"
 
   val gatewayHostHeader = "BD-Host"

@@ -7,8 +7,9 @@ import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.redis.Client
 import com.twitter.finagle.redis.protocol.{Limit, ZInterval}
-import com.twitter.finagle.redis.util._
+import com.twitter.finagle.redis.util.{BufToString, _}
 import com.twitter.io.Buf
+import com.twitter.logging.Level
 import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
@@ -149,8 +150,13 @@ object Redis {
   }
 
   /** Increase a redis counter by key */
-  def increaseCounter(counter: String) {
+  def increaseStat(counter: String) {
     redis.incr(StringToBuf(stats+counter))
+  }
+
+  /** Decrease a redis counter by key */
+  def decreaseStat(counter: String) {
+    redis.decr(StringToBuf(stats+counter))
   }
 
   /** Increase a stats bytes counter by number of bytes */
@@ -181,9 +187,67 @@ object Redis {
     redis.hMSet(StringToChannelBuffer(eventNamespace+id), fields)
     // add event id to sorted set ordered by date
     redis.zAdd(StringToChannelBuffer("events"), millis.toDouble, StringToChannelBuffer(eventNamespace+id))
+    // quotas
+    logRequestsQuota(user)
+
     log.debug(s"Event $eventType on $resource at ${calendar.getTime} from $clientIP")
   }
 
+  /**
+    * Decrease quota counter for user. If counter doesn't exist start one using config quotas.requests.total.
+    *
+    * @param userId the user ID we are updating quota for
+    */
+  def logRequestsQuota(userId: String): Unit = {
+    log.setLevel(Level.DEBUG)
+    val key = userNamespace + userId + ":requests"
+    val counter = redis.get(StringToBuf(key))
+    counter.map { count =>
+      count match {
+        case Some(k) =>
+          // if key was found decrease counter
+          log.debug(s"Key $key found. Decreasing counter.")
+          if (BufToString(k).toInt > 0) redis.decr(StringToBuf(key))
+        case None =>
+          // Setting requests quota for user since it was not found
+          setRequestsQuota(userId)
+      }
+    }
+  }
+
+  /**
+    * Check if user requests quota is above zero.
+    *
+    * @param userId the user ID to check the quota for
+    * @return true if user quota > 0 and false if not
+    */
+  def checkRequestsQuota(userId: String): Future[Boolean] = {
+    val key = userNamespace + userId + ":requests"
+    val counter = redis.get(StringToBuf(key))
+    counter.flatMap { count =>
+      count match {
+        case Some(k) =>
+          if (BufToString(k).toInt > 0) Future.value(true) else Future.value(false)
+        case None =>
+          // Setting requests quota for user since it was not found
+          setRequestsQuota(userId)
+          Future.value(true)
+      }
+    }
+  }
+
+  /**
+    * Setting request quotas for user based on config file `quotas.requests.total`
+    *
+    * @param userId user id for which the request quota is being set
+    */
+  def setRequestsQuota(userId: String): Unit = {
+    val key = userNamespace + userId + ":requests"
+    val maxRequests = conf.getInt("quotas.requests.total")
+    val initialValue = StringToBuf(maxRequests.toString)
+    log.debug(s"Quotas for user $userId not found. Setting default quota $key to $maxRequests")
+    redis.set(StringToBuf(key), initialValue)
+  }
 
   /**
     * Get global activity statistics.
