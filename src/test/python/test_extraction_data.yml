@@ -1,4 +1,9 @@
 -
+  description: Test ncsa.chi_analysis
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/head_hills.bil.zip
+  skip: Not deployed on production yet
+  output: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/chi_analysis_output.json
+-
   description: Test ncsa.cv.meangrey
   skip: Not deployed on production yet
   file_url: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/ncsa.jpg
