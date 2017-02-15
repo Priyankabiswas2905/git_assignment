@@ -4,6 +4,8 @@
   output: '"content": {"generated_file"'
 -
   description: Test ncsa.arcgis.floodplain
+  extractor: ncsa.arcgis.floodplain
+  skip: Not deployed on production yet
   file_url: https://isda.ncsa.illinois.edu/browndog/data/floodplain_extractor/floodplain_data.zip
   output: generated_dataset
 -
