@@ -5,7 +5,7 @@
 -
   description: Test ncsa.arcgis.floodplain
   extractor: ncsa.arcgis.floodplain
-  skip: Not deployed on production yet
+  skip: extractor is on fixing: BD-1465.
   file_url: https://isda.ncsa.illinois.edu/browndog/data/floodplain_extractor/floodplain_data.zip
   output: generated_dataset
 -
