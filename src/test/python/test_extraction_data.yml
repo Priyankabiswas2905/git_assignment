@@ -25,6 +25,12 @@
   extractor: ncsa.cv.eyes
   output: '"content": {"eyes"'
 -
+  description: Test ncsa.arcgis.floodplain
+  extractor: ncsa.arcgis.floodplain
+  skip: extractor is being fixed as part of BD-1465
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/floodplain_extractor/floodplain_data.zip
+  output: generated_dataset
+-
   description: Test ncsa.image.caltech101
   file_url: http://browndog.ncsa.illinois.edu/examples/caltech101/airplane.jpg
   #extractor: ncsa.cv.caltech101
