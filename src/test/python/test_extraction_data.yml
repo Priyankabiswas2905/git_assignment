@@ -38,7 +38,7 @@
 -
   description: Test ncsa.image.metadata
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-core/raw/image/metadata/tests/godzilla.gif
-  output: '"content": {"Border color"'
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-core/browse/image/metadata/tests/test_godzilla.gif.txt
 
 #-
 #  description: Test ncsa.cv.river extractor
