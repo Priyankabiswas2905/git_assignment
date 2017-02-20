@@ -10,6 +10,12 @@
 # false negatives, and longer execution times.
 
 -
+  description: Test ncsa.image.geotiff
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation-500yr.tif
+  extractor: ncsa.image.geotiff
+  skip: Not deployed on production yet
+  output: raster
+-
   description: Test ncsa.cv.meangrey
   skip: Not deployed on production yet
   file_url: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/ncsa.jpg
