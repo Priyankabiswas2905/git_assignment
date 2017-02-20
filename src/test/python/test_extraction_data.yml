@@ -66,3 +66,8 @@
   extractor: ncsa.cv.river
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/raw/extractors-river/tests/39-72.tif
   output: '"content": {"generated_file"'
+-
+  description: Test ncsa.video.person_tracking
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-tracking/raw/tests/input.mp4
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-tracking/raw/tests/test_output.json
+  extractor: ncsa.video.person_tracking
