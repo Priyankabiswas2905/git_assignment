@@ -1,7 +1,7 @@
 -
   description: Test ncsa.image.geotiff
   file_url: https://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation-500yr.tif
-  extrator: ncsa.image.geotiff
+  extractor: ncsa.image.geotiff
   skip: Not deployed on production yet
   output: raster
 -
