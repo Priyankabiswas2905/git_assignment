@@ -1,4 +1,10 @@
 -
+  description: Test ncsa.image.geotiff
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation-500yr.tif
+  extrator: ncsa.image.geotiff
+  skip: Not deployed on production yet
+  output: raster
+-
   description: Test ncsa.chi_analysis
   file_url: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/head_hills.bil.zip
   skip: Not deployed on production yet
