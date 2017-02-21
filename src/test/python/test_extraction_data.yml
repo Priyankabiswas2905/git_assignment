@@ -14,7 +14,7 @@
   file_url: https://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation-500yr.tif
   extractor: ncsa.image.geotiff
   skip: Not deployed on production yet
-  output: raster
+  output: http://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation_output.json
 -
   description: Test ncsa.cv.meangrey
   skip: Not deployed on production yet
