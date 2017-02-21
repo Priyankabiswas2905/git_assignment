@@ -30,7 +30,8 @@ def test_get_convert(host, api_token, timeout, conversion_data):
             output_filename = output_path
         else:
             output_filename = output_path + basename(r.text)
-        filename = download_file(r.text, output_filename, api_token, 90)
+	download_url = endpoint + '/' + os.path.basename(r.text)
+	filename = download_file(download_url, output_filename, api_token, 90)
         assert os.path.isfile(filename), "File was not downloaded"
         print "Downloaded      :", filename
         try:
