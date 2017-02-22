@@ -21,7 +21,7 @@ def test_get_extract(host, api_token, timeout, extraction_data):
     output = extraction_data['output']
     metadata = extract_by_url(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), timeout)
     print("Extraction output " + metadata)
-    if output.startswith("http://"):
+    if output.startswith("http://") or output.startswith("https://"):
         output = urllib2.urlopen(output).read().strip()
     assert metadata.find(output) != -1, "Could not find expected text"
 
