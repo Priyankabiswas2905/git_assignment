@@ -12,6 +12,7 @@
 -
   description: Test ncsa.chi_analysis
   file_url: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/head_hills.bil.zip
+  extractor: ncsa.chi_analysis
   output: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/chi_analysis_output.json
 -
   description: Test ncsa.dbpedia
