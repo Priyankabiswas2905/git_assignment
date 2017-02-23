@@ -1,4 +1,10 @@
 -
   description: Test ncsa.image.geotiff
   file_url: https://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation-500yr.tif
+  skip: skipped
   output: http://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation_output.json
+-
+  description: Test ncsa.image.geotiff
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/dbpedia/test.txt
+  output: https://isda.ncsa.illinois.edu/browndog/data/dbpedia/dbpedia.output
+
