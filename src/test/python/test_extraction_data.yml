@@ -4,7 +4,8 @@
   skip: skipped
   output: http://isda.ncsa.illinois.edu/browndog/data/image_geotiff/inundation_output.json
 -
-  description: Test ncsa.image.geotiff
+  description: Test ncsa.dbpedia
   file_url: https://isda.ncsa.illinois.edu/browndog/data/dbpedia/test.txt
+  extractor: ncsa.dbpedia
   output: https://isda.ncsa.illinois.edu/browndog/data/dbpedia/dbpedia.output
 
