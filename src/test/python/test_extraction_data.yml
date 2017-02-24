@@ -47,7 +47,7 @@
 -
   description: Test ncsa.image.caltech101
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/raw/extractors-vlfeat/test/airplane.jpg
-  #extractor: ncsa.cv.caltech101
+  extractor: ncsa.cv.caltech101
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/raw/extractors-vlfeat/test/airplane_test_output.json
 -
   description: Test ncsa.nlp.language
