@@ -78,3 +78,7 @@
   description: PGM to JPG
   file_url: https://isda.ncsa.illinois.edu/browndog/data/balloons.ascii.pgm
   output_type: jpg
+
+  description: Test converters-hyperspectral convert from bil.zip to terraref.nc
+  skip: Not deployed on production yet & no public test data available.
+  output_type: terraref.nc
