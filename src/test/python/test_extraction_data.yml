@@ -75,16 +75,15 @@
   extractor: ncsa.cv.river
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/raw/extractors-river/tests/39-72.tif
   output: '"content": {"generated_file"'
-
+-
   description: Test ncsa.maps.tuv extractor
-  skip: Not deployed on production yet
   extractor: ncsa.maps.tuv
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-maps/raw/extractors-tuv/test/Manitowoc_01.csv
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-maps/raw/extractors-tuv/test/Manitowoc_01.csv.txt
-
+-
   description: Test terra.plantcv extractor
   skip: Not deployed on production yet
   extractor: terra.plantcv
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/VIS_SV_180_z1_1207272.png
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/test_VIS_SV_180_z1_1207272.png.txt
-
+-
