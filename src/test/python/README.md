@@ -12,7 +12,7 @@ pip install -r requirements.txt
 Run tests from the command line (or use an IDE):
 
 ```
-pytest --host https://bd-api.ncsa.illinois.edu --username yourusernamehere --password yourpasswordhere --junitxml=results.xml (--retry numberofretry)
+pytest --host https://bd-api.ncsa.illinois.edu --username yourusernamehere --password yourpasswordhere --junitxml=results.xml --reruns numberofretries
 ```
 
 Optional arguments
@@ -35,7 +35,6 @@ post_results.py --mailserver=localhost
 # add to mongo
 post_results.py --mailserver=localhost --mongo_host=localhost --mongo_db=browndog --mongo_collection=test_results
 ```
-
 
 You can add extractions and conversions to the test_conversion_data.yml and test_extraction_data.yml files. If you know
 of a test that will fail you can add a skip there with a description of why that test is skipped.

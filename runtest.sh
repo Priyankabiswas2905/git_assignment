@@ -1,8 +1,8 @@
 #!/bin/bash
 
-USERNAME=""
-PASSWORD=""
-TESTS=10
+USERNAME="kooper@illinois.edu"
+PASSWORD="hello123"
+TESTS=1
 
 if [ "$1" == "DEV" ]; then
   SERVER="https://bd-api-dev.ncsa.illinois.edu"
@@ -19,10 +19,10 @@ LOG="/tmp/results-${OUT}.txt"
 cd src/test/python
 
 #Manual test
-pytest -n ${TESTS} --host ${SERVER} --username ${USERNAME} --password ${PASSWORD} --junitxml=${XML}
+pytest -n ${TESTS} --host ${SERVER} --username ${USERNAME} --password ${PASSWORD} --junitxml=${XML} --reruns 2
 
 #Hourly tests
 #git pull &> ${LOG}
 #rsync -a ../../main/web/tests/ /usr/share/nginx/html >> ${LOG}
-#pytest -n ${TESTS} --host ${SERVER} --username ${USERNAME} --password ${PASSWORD} --junitxml=${XML} >> ${LOG}
+#pytest -n ${TESTS} --host ${SERVER} --username ${USERNAME} --password ${PASSWORD} --junitxml=${XML} --reruns 2 >> ${LOG}
 #python post_results.py --junitxml=${XML} --mailserver=localhost --mongo_host=mongo.ncsa.illinois.edu --mongo_db=browndog --mongo_collection=test_results --server ${OUT} --watchers watchers-${OUT}.yml --url http://bd-test.ncsa.illinois.edu >> ${LOG}
