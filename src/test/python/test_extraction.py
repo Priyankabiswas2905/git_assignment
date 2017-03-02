@@ -19,6 +19,10 @@ def test_get_extract(host, api_token, timeout, extraction_data):
     endpoint = host + '/dts/api'
     input_url = extraction_data['file_url']
     output = extraction_data['output']
+	
+    print 'endpoint: ', endpoint
+    print 'output: ', output
+
     metadata = extract_by_url(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), timeout)
     print("Extraction output " + metadata)
     if output.startswith("http://") or output.startswith("https://"):
