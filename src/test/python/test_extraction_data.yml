@@ -12,6 +12,7 @@
   description: Test ncsa.geoshp.preview
   file_url: https://isda.ncsa.illinois.edu/browndog/data/geoship_extractor/states.zip
   skip: not deploy on dev and prod yet
+  extractor: ncsa.geoshp.preview
   output: https://isda.ncsa.illinois.edu/browndog/data/geoship_extractor/test.json
 -
   description: Test ncsa.chi_analysis
