@@ -8,7 +8,11 @@
 # will result in shorter tests, and less chance of failures (see CATS-719). This also assumes correct metadata
 # returned by extractor with id X. If this is not the case don't specify extractor, however this could lead to
 # false negatives, and longer execution times.
-
+-
+  description: Test ncsa.geoshp.preview
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/geoship_extractor/states.zip
+  skip: not deploy on dev and prod yet
+  output: https://isda.ncsa.illinois.edu/browndog/data/geoship_extractor/test.json
 -
   description: Test ncsa.chi_analysis
   file_url: https://isda.ncsa.illinois.edu/browndog/data/chi_analysis_extractor/head_hills.bil.zip
