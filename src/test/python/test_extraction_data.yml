@@ -96,3 +96,13 @@
   extractor: terra.plantcv
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/VIS_SV_180_z1_1207272.png
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/test_VIS_SV_180_z1_1207272.png.txt
+-
+  description: Test ncsa.video.person_tracking
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-tracking/raw/tests/input.mp4
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-tracking/raw/tests/test_output.json
+  extractor: ncsa.video.person_tracking
+-
+  description: Test ncsa.video.person_detector
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/input.mp4
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/test_output.json
+  extractor: ncsa.video.person_detector
