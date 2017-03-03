@@ -83,6 +83,7 @@
 -
   description: Test ncsa.maps.tuv extractor
   extractor: ncsa.maps.tuv
+  skip: not execution time exceeds time limit, see BD-1507
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-maps/raw/extractors-tuv/test/Manitowoc_01.csv
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-maps/raw/extractors-tuv/test/Manitowoc_01.csv.txt
 -
