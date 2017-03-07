@@ -101,3 +101,8 @@
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/input.mp4
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/test_output.json
   extractor: ncsa.video.person_detector
+-
+  description: Test ncsa.arcgis.treedelin
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/2014_OSBS_1_400000_3279000_CHM.tif
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/test_output.txt
+  extractor: ncsa.arcgis.treedelin
