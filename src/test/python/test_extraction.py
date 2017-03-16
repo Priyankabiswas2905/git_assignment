@@ -3,30 +3,43 @@ import pytest
 import requests
 import time
 import urllib2
-
+import tempfile
+import os
+import mimetypes
+from util import *
 
 # @pytest.mark.skip(reason="testing conversions")
 def test_get_extract(host, api_token, timeout, extraction_data):
     # should this test be skipped
     if 'skip' in extraction_data:
         pytest.skip(extraction_data['skip'])
+    
+    if 'file_url' in extraction_data:
+        extract(host, api_token, timeout, extraction_data, 'file_url')
+    if 'file_path' in extraction_data:
+        extract(host, api_token, timeout, extraction_data, 'file_path')
+
+def extract(host, api_token, timeout, extraction_data, file_field):
+    # should this test be skipped
+    if 'skip' in extraction_data:
+        pytest.skip(extraction_data['skip'])
 
     print "Description     :", extraction_data['description']
     print "Extractor       :", extraction_data.get('extractor', 'all')
-    print "Extracting from :", extraction_data['file_url']
+    print "Extracting from :", extraction_data[file_field]
     print "Expecting       :", extraction_data['output']
 
     endpoint = host + '/dts/api'
-    input_url = extraction_data['file_url']
+    input_url = extraction_data[file_field]
     output = extraction_data['output']
-    metadata = extract_by_url(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), timeout)
+    metadata = extract_func(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), timeout)
     print("Extraction output " + metadata)
     if output.startswith("http://") or output.startswith("https://"):
         output = urllib2.urlopen(output).read().strip()
     assert metadata.find(output) != -1, "Could not find expected text"
 
 
-def extract_by_url(endpoint, api_token, input_url, extractor, timeout):
+def extract_func(endpoint, api_token, input_url, extractor, timeout):
     headers_json = {'Authorization': api_token, 'Content-Type': 'application/json'}
     headers_del = {'Authorization': api_token}
     api_call = endpoint + '/extractions/upload_url'
@@ -35,7 +48,16 @@ def extract_by_url(endpoint, api_token, input_url, extractor, timeout):
     print "API Call        :", api_call
 
     # upload the file
-    r = requests.post(api_call, headers=headers_json, timeout=timeout, data=json.dumps({"fileurl": input_url}))
+    if os.path.exists(input_url):
+        boundary = 'browndog-fence-header'
+        files = [('File', (input_url, mimetypes.guess_type(input_url)[0] or 'application/octet-stream'))]
+        r = requests.post(api_call,
+                            headers={'Accept': 'application/json', 'Authorization': api_token,
+                                   'Content-Type': 'multipart/form-data; boundary=' + boundary},
+                            timeout=timeout,
+                            data=multipart([], files, boundary, 5 * 1024 * 1024))
+    else:
+        r = requests.post(api_call, headers=headers_json, timeout=timeout, data=json.dumps({"fileurl": input_url}))
     r.raise_for_status()
     file_id = r.json()['id']
     print("File id " + file_id)
