@@ -16,20 +16,13 @@ def test_get_extract(host, api_token, timeout, extraction_data):
     print "Extracting from :", extraction_data['file_url']
     print "Expecting       :", extraction_data['output']
 
-    endpoint = host + '/dts/api'
+    endpoint = "http://10.192.32.23:8080" + '/dts/api'
     input_url = extraction_data['file_url']
     output = extraction_data['output']
-	
-    print 'endpoint: ', endpoint
-    print 'output: ', output
-
     metadata = extract_by_url(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), timeout)
     print("Extraction output " + metadata)
     if output.startswith("http://") or output.startswith("https://"):
         output = urllib2.urlopen(output).read().strip()
-    
-    print "[output]: ", output    
-
     assert metadata.find(output) != -1, "Could not find expected text"
 
 

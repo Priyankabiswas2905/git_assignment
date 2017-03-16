@@ -5,24 +5,40 @@ import os
 import os.path
 import pytest
 import time
+import mimetypes
+import tempfile
+from util import *
+
 
 from conftest import download_file
-
 
 def test_get_convert(host, api_token, timeout, conversion_data):
     # should this test be skipped
     if 'skip' in conversion_data:
         pytest.skip(conversion_data['skip'])
+    
+    if 'file_url' in conversion_data:
+        convert(host, api_token, timeout, conversion_data, convert_by_url, 'file_url')
+    
+    if 'file_path' in conversion_data:
+        convert(host, api_token, timeout, conversion_data, convert_by_file, 'file_path')
+
+
+def convert(host, api_token, timeout, conversion_data, convert_func, file_field):
 
     print "Description     :", conversion_data['description']
-    print "Converting from :", conversion_data['file_url']
+    print "Converting from :", conversion_data[file_field]
     print "Converting to   :", conversion_data['output_type']
 
     endpoint = host + '/dap'
-    input_filename = conversion_data['file_url']
+    input_filename = conversion_data[file_field]
     output = conversion_data['output_type']
-    output_path = '/tmp/' + str(0) + '_' + splitext(basename(input_filename))[0] + '.' + output
-    r = convert_by_url(endpoint, api_token, input_filename, output, int(timeout))
+    tf = tempfile.NamedTemporaryFile(dir='/tmp')
+    output_path = tf.name + '.' + output
+    
+    print "[endpoint]: ", endpoint
+    r = convert_func(endpoint, api_token, input_filename, output, int(timeout))
+
     if r.status_code == 200:
         print "Output path     :", output_path
         print "File url        :", r.text
@@ -50,3 +66,11 @@ def convert_by_url(endpoint, api_token, input_filename, output, timeout):
     api_call = endpoint + '/convert/' + output + '/' + urllib.quote_plus(input_filename)
     print "API Call        :", api_call
     return requests.get(api_call, headers=headers, timeout=timeout)
+
+def convert_by_file(endpoint, api_token, input_filename, output, timeout):
+    api_call = endpoint + '/convert/' + output + '/'
+    boundary = 'browndog-fence-header'
+    files = [('file', (input_filename, mimetypes.guess_type(input_filename)[0] or 'application/octet-stream'))]
+    return requests.post(api_call, headers={'Accept': 'text/plain', 'Authorization': api_token,
+                              'Content-Type': 'multipart/form-data; boundary=' + boundary},
+                              data=multipart([], files, boundary, 5 * 1024 * 1024))
