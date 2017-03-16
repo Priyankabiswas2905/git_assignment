@@ -20,9 +20,6 @@ def test_get_extract(host, api_token, timeout, extraction_data):
         extract(host, api_token, timeout, extraction_data, 'file_path')
 
 def extract(host, api_token, timeout, extraction_data, file_field):
-    # should this test be skipped
-    if 'skip' in extraction_data:
-        pytest.skip(extraction_data['skip'])
 
     print "Description     :", extraction_data['description']
     print "Extractor       :", extraction_data.get('extractor', 'all')
