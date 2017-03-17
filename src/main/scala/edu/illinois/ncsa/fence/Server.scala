@@ -2,6 +2,7 @@ package edu.illinois.ncsa.fence
 
 import java.net.{URL, URLDecoder}
 import java.util.UUID
+import javax.lang.model.SourceVersion
 
 import com.twitter.finagle.http.Method.{Delete, Get, Post}
 import com.twitter.finagle.http.Version.Http11
@@ -17,6 +18,7 @@ import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.Quotas.{RateLimitFilter, RequestsQuotasFilter}
 import edu.illinois.ncsa.fence.auth.LocalAuthUser
+import edu.illinois.ncsa.fence.db.Mongodb
 import edu.illinois.ncsa.fence.models.Stats
 import edu.illinois.ncsa.fence.util.GatewayHeaders.GatewayHostHeaderFilter
 import edu.illinois.ncsa.fence.util.{Clowder, ExternalResources, GatewayHeaders, Jackson}
@@ -215,7 +217,7 @@ object Server extends TwitterServer {
       // log stats and events
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "extractions"
-      Redis.storeEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
+      Mongodb.addEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseStat(logKey)
       rep
@@ -251,7 +253,7 @@ object Server extends TwitterServer {
       val logKey = "extractions"
       val fileurl = Clowder.extractFileURL(req)
       ExternalResources.contentLengthFromHead(fileurl, logKey)
-      Redis.storeEvent("extraction", fileurl, username, req.remoteSocketAddress.toString)
+      Mongodb.addEvent("extraction", fileurl, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseStat(logKey)
       rep
@@ -294,7 +296,7 @@ object Server extends TwitterServer {
       // log events
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
-      Redis.storeEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
+      Mongodb.addEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
       Redis.increaseStat(logKey)
       Redis.logBytes(logKey, req.getLength())
       rep
@@ -339,7 +341,7 @@ object Server extends TwitterServer {
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       ExternalResources.contentLengthFromHead(url, logKey)
-      Redis.storeEvent("conversion", url, username, req.remoteSocketAddress.toString)
+      Mongodb.addEvent("conversion", url, username, req.remoteSocketAddress.toString)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseStat(logKey)
       rep
@@ -375,8 +377,32 @@ object Server extends TwitterServer {
     Service.mk { (req: Request) =>
       val since = req.params.get("since")
       val until = req.params.get("until")
-      val limit = req.params.getLongOrElse("limit", 1000)
-      Redis.getEvents(since, until, limit).flatMap { events =>
+      val limit = req.params.getLongOrElse("limit", 100)
+      // must cast from scala Future to twitter Future
+      import edu.illinois.ncsa.fence.utils.TwitterFutures._
+      import scala.concurrent.ExecutionContext.Implicits.global
+      Mongodb.getEvents(since, until, limit.toInt).asTwitter.flatMap { events =>
+        val json = Jackson.stringToJSON(events)
+        val r = Response()
+        r.setContentTypeJson()
+        r.setContentString(json)
+        Future.value(r)
+      }
+    }
+  }
+
+  /**
+    * Get latest n events.
+    * @return Json array of matching events.
+    */
+  def latestEvents(): Service[Request, Response] = {
+    log.debug("[Endpoint] Get latest events ")
+    Service.mk { (req: Request) =>
+      val limit = req.params.getLongOrElse("limit", 100)
+      // must cast from scala Future to twitter Future
+      import edu.illinois.ncsa.fence.utils.TwitterFutures._
+      import scala.concurrent.ExecutionContext.Implicits.global
+      Mongodb.getLatestEvents(limit.toInt).asTwitter.flatMap { events =>
         val json = Jackson.stringToJSON(events)
         val r = Response()
         r.setContentTypeJson()
@@ -395,7 +421,10 @@ object Server extends TwitterServer {
   def event(eventId: String): Service[Request, Response] = {
     log.debug("[Endpoint] Get event")
     Service.mk { (req: Request) =>
-      Redis.getEvent(eventId).flatMap { event =>
+      // must cast from scala Future to twitter Future
+      import edu.illinois.ncsa.fence.utils.TwitterFutures._
+      import scala.concurrent.ExecutionContext.Implicits.global
+      Mongodb.getEventById(eventId).asTwitter.flatMap { event =>
         val json = Jackson.stringToJSON(event)
         val r = Response()
         r.setContentTypeJson()
@@ -552,6 +581,7 @@ object Server extends TwitterServer {
     case (Get, Root / "tokens" / token) => cf andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
     case (Delete, Root / "tokens" / token) => cf andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
     case (Get, Root / "crowd" / "session") => cf andThen Crowd.session()
+    case (Get, Root / "events" / "latest") => cf andThen tokenFilter andThen latestEvents()
     case (Get, Root / "events" / eventId) => cf andThen tokenFilter andThen event(eventId)
     case (Get, Root / "events") => cf andThen tokenFilter andThen events()
     case (Get, Root / "stats") => cf andThen stats()
@@ -572,6 +602,8 @@ object Server extends TwitterServer {
   }
 
   def main(): Unit = {
+    log.info("Setting up Mongodb indexes...")
+    Mongodb.setupIndexes()
     log.info("Starting server...")
     val server = start()
     onExit {
