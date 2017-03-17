@@ -32,6 +32,9 @@ libraryDependencies ++= Seq(
   "com.twitter" %% "finagle-redis" % versions.finagle,
   "com.twitter" %% "twitter-server" % "1.20.0",
   "com.typesafe" % "config" % "1.2.1",
+  "org.mongodb.scala" %% "mongo-scala-driver" % "1.2.1",
+  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.4.4",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.4.4",
 
 //  "com.twitter.finatra" %% "finatra-http" % versions.finatra % "provided",
 //  "com.twitter.finatra" %% "finatra-httpclient" % versions.finatra % "provided",
