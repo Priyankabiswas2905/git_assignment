@@ -1,4 +1,4 @@
-package edu.illinois.ncsa.fence.utils
+package edu.illinois.ncsa.fence.util
 
 import java.io.FileNotFoundException
 

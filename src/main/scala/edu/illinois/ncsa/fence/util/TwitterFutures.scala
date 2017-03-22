@@ -1,8 +1,9 @@
-package edu.illinois.ncsa.fence.utils
+package edu.illinois.ncsa.fence.util
 
-import com.twitter.util.{Future => TwitterFuture, Promise => TwitterPromise, Return, Throw}
-import scala.concurrent.{Future => ScalaFuture, Promise => ScalaPromise, ExecutionContext}
-import scala.util.{Success, Failure}
+import com.twitter.util.{Return, Throw, Future => TwitterFuture, Promise => TwitterPromise}
+
+import scala.concurrent.{ExecutionContext, Future => ScalaFuture, Promise => ScalaPromise}
+import scala.util.{Failure, Success}
 
 /**
   * Convert between Twitter Futures and Scala Futures. See:
