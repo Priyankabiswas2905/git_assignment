@@ -217,7 +217,8 @@ object Server extends TwitterServer {
       // log stats and events
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "extractions"
-      Mongodb.addEvent("extraction", "file:///", username, req.remoteSocketAddress.toString)
+      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+      Mongodb.addEvent("extraction", "file:///", username, clientIP)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseStat(logKey)
       rep
@@ -253,7 +254,8 @@ object Server extends TwitterServer {
       val logKey = "extractions"
       val fileurl = Clowder.extractFileURL(req)
       ExternalResources.contentLengthFromHead(fileurl, logKey)
-      Mongodb.addEvent("extraction", fileurl, username, req.remoteSocketAddress.toString)
+      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+      Mongodb.addEvent("extraction", fileurl, username, clientIP)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseStat(logKey)
       rep
@@ -296,7 +298,8 @@ object Server extends TwitterServer {
       // log events
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
-      Mongodb.addEvent("conversion", "file:///", username, req.remoteSocketAddress.toString)
+      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+      Mongodb.addEvent("conversion", "file:///", username, clientIP)
       Redis.increaseStat(logKey)
       Redis.logBytes(logKey, req.getLength())
       rep
@@ -341,7 +344,8 @@ object Server extends TwitterServer {
       val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
       val logKey = "conversions"
       ExternalResources.contentLengthFromHead(url, logKey)
-      Mongodb.addEvent("conversion", url, username, req.remoteSocketAddress.toString)
+      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+      Mongodb.addEvent("conversion", url, username, clientIP)
       Redis.logBytes(logKey, req.getLength())
       Redis.increaseStat(logKey)
       rep
