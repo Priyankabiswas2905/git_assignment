@@ -16,7 +16,8 @@ def test_get_extract(host, api_token, timeout, extraction_data):
     
     if 'file_url' in extraction_data:
         extract(host, api_token, timeout, extraction_data, 'file_url')
-    if 'file_path' in extraction_data:
+    if 'download' in extraction_data:
+        extraction_data['file_path'] = download_file_web(extraction_data['file_url'])
         extract(host, api_token, timeout, extraction_data, 'file_path')
 
 def extract(host, api_token, timeout, extraction_data, file_field):
@@ -30,6 +31,10 @@ def extract(host, api_token, timeout, extraction_data, file_field):
     input_url = extraction_data[file_field]
     output = extraction_data['output']
     metadata = extract_func(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), timeout)
+    filename = extraction_data[file_field]
+    if os.path.isfile(filename):
+        os.remove(filename)
+
     print("Extraction output " + metadata)
     if output.startswith("http://") or output.startswith("https://"):
         output = urllib2.urlopen(output).read().strip()

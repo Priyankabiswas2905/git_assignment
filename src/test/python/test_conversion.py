@@ -19,8 +19,8 @@ def test_get_convert(host, api_token, timeout, conversion_data):
     
     if 'file_url' in conversion_data:
         convert(host, api_token, timeout, conversion_data, convert_by_url, 'file_url')
-    
-    if 'file_path' in conversion_data:
+    if 'download' in conversion_data:
+        conversion_data['file_path'] = download_file_web(conversion_data['file_url'])
         convert(host, api_token, timeout, conversion_data, convert_by_file, 'file_path')
 
 def convert(host, api_token, timeout, conversion_data, convert_func, file_field):
@@ -47,6 +47,9 @@ def convert(host, api_token, timeout, conversion_data, convert_func, file_field)
         try:
             assert getsize(filename) != 0, "Resulting file is 0 bytes"
         finally:
+            if os.path.isfile(filename):
+                os.remove(filename)
+            filename = conversion_data[file_field]
             if os.path.isfile(filename):
                 os.remove(filename)
     else:

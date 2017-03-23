@@ -1,4 +1,27 @@
 import os
+import urllib2
+import tempfile
+
+def download_file_web(url):
+    u = urllib2.urlopen(url)
+    file_name = url.split('/')[-1]
+    tf = tempfile.NamedTemporaryFile(dir='/tmp')
+    downloaded_filename = tf.name + '.' + file_name
+    f = open(downloaded_filename, 'wb')
+
+    file_size_dl = 0
+    block_sz = 8192
+    while True:
+        buffer = u.read(block_sz)
+        if not buffer:
+            break
+
+        file_size_dl += len(buffer)
+        f.write(buffer)
+
+    f.close()
+    #print "download file: ", downloaded_filename
+    return downloaded_filename
 
 def multipart(data, files, boundary, blocksize=1024 * 1024):
     """Creates appropriate body to send with requests.
