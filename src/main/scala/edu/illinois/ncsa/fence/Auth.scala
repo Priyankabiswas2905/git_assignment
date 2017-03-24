@@ -7,16 +7,21 @@ import com.twitter.finagle.redis.util.BufToString
 import com.twitter.finagle.{Service, SimpleFilter, http}
 import com.twitter.io.Buf
 import com.twitter.server.util.JsonConverter
-import com.twitter.util.{Base64StringEncoder, Future}
+import com.twitter.util.Future
+import com.typesafe.config.ConfigFactory
+import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.Server._
+import edu.illinois.ncsa.fence.auth.LocalAuthUser
 import edu.illinois.ncsa.fence.util.GatewayHeaders
 
-import scala.util.{Failure, Success}
 
 /**
   * Authentication and authorization methods.
   */
 object Auth {
+
+  /** Load configuration file using typesafehub config */
+  private val conf = ConfigFactory.load()
 
   val accessTokenStats = statsReceiver.counter("fence-new-access-token")
 
@@ -114,9 +119,22 @@ object Auth {
     }
   }
 
-  def checkUsernamePassword(username: String, password: String): Boolean = {
-    // FIXME: Look it up
-    username == "open" && password == "sesame"
+  /**
+    * Pick a provider for authenticating users. Currently local in configuration file or external in Atlassian Crowd
+    * @return a simple filter checking credentials in the header of the request
+    */
+  def getProvider(): SimpleFilter[Request, Response] = {
+    conf.getString("auth.provider") match {
+      case "crowd" =>
+        log.debug("Using crowd authorization")
+        new CrowdAuthorizeUserPassword
+      case "local" =>
+        log.debug("Using local authorization")
+        new LocalAuthUser
+      case _ =>
+        log.debug("Defaulting to crowd authorization")
+        new CrowdAuthorizeUserPassword
+    }
   }
 
   class AuthorizeToken extends SimpleFilter[Request, Response] {
@@ -167,7 +185,6 @@ object Auth {
   }
 
   class TokenFilter() extends SimpleFilter[Request, Response] {
-
     override def apply(request: Request, continue: Service[Request, Response]): Future[Response] = {
       try {
         request.headerMap.get(Fields.Authorization) match {
@@ -203,27 +220,6 @@ object Auth {
       val errorResponse = Response(Version.Http11, Status.Forbidden)
       errorResponse.contentString = "Invalid token"
       Future(errorResponse)
-    }
-  }
-
-  class AuthorizeUserPassword extends SimpleFilter[Request, Response] {
-    def apply(request: Request, continue: Service[Request, Response]) = {
-      // validate credentials
-      request.headerMap.get(Fields.Authorization) match {
-        case Some(header) =>
-          val credentials = new String(Base64StringEncoder.decode(header.substring(6))).split(":")
-          if (credentials.size == 2 && checkUsernamePassword(credentials(0), credentials(1))) {
-            continue(request)
-          } else {
-            val errorResponse = Response(Version.Http11, Status.Forbidden)
-            errorResponse.contentString = "Invalid credentials"
-            Future(errorResponse)
-          }
-        case None =>
-          val errorResponse = Response(Version.Http11, Status.Forbidden)
-          errorResponse.contentString = "Invalid credentials"
-          Future(errorResponse)
-      }
     }
   }
 }
