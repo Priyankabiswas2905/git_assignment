@@ -9,6 +9,11 @@
 # returned by extractor with id X. If this is not the case don't specify extractor, however this could lead to
 # false negatives, and longer execution times.
 -
+  description: Test ncsa.versus.image
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/versus_extractor/test.jpg
+  extractor: ncsa.versus.image
+  output: https://isda.ncsa.illinois.edu/browndog/data/versus_extractor/output.json
+-
   description: Test ncsa.geoshp.preview
   file_url: https://isda.ncsa.illinois.edu/browndog/data/geoship_extractor/states.zip
   skip: not deploy on dev and prod yet
