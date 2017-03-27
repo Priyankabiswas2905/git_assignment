@@ -37,6 +37,7 @@
 -
   description: Test ncsa.cv.meangrey
   file_url: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/ncsa.jpg
+  extractor: ncsa.cv.meangrey
   output: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/output.json
 -
   description: Test ncsa.cv.face extractor for true positive
