@@ -16,7 +16,7 @@ def test_get_extract(host, api_token, timeout, extraction_data):
     print "Extracting from :", extraction_data['file_url']
     print "Expecting       :", extraction_data['output']
 
-    endpoint = host + '/dts/api'
+    endpoint = host
     input_url = extraction_data['file_url']
     output = extraction_data['output']
     metadata = extract_by_url(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), timeout)
@@ -42,7 +42,7 @@ def extract_by_url(endpoint, api_token, input_url, extractor, timeout):
 
     # trigger extractor, and check specific output
     if extractor != 'all':
-        r = requests.post("%s/files/%s/extractions" % (endpoint, file_id), headers=headers_json,
+        r = requests.post("%s/extractions/files/%s" % (endpoint, file_id), headers=headers_json,
                           timeout=timeout, data=json.dumps({"extractor": extractor}))
         r.raise_for_status()
 
@@ -50,7 +50,7 @@ def extract_by_url(endpoint, api_token, input_url, extractor, timeout):
         stoptime = time.time() + timeout
         metadata = []
         while stoptime > time.time():
-            r = requests.get('%s/files/%s/metadata.jsonld?extractor=%s' % (endpoint, file_id, extractor),
+            r = requests.get('%s/extractions/files/%s/metadata.jsonld?extractor=%s' % (endpoint, file_id, extractor),
                              headers=headers_json, timeout=timeout)
             r.raise_for_status()
             if r.text != '[]':
@@ -75,16 +75,16 @@ def extract_by_url(endpoint, api_token, input_url, extractor, timeout):
         r.raise_for_status()
         metadata = r.json()
 
-        r = requests.get(endpoint + '/files/' + file_id + '/technicalmetadatajson', headers=headers_json, timeout=timeout)
+        r = requests.get(endpoint + '/extractions/files/' + file_id + '/technicalmetadatajson', headers=headers_json, timeout=timeout)
         r.raise_for_status()
         metadata["technicalmetadata"] = r.json()
 
-        r = requests.get(endpoint + '/files/' + file_id + '/metadata.jsonld', headers=headers_json, timeout=timeout)
+        r = requests.get(endpoint + '/extractions/files/' + file_id + '/metadata.jsonld', headers=headers_json, timeout=timeout)
         r.raise_for_status()
         metadata["metadata.jsonld"] = r.json()
 
     # Delete test files
-    r = requests.delete(endpoint + '/files/' + file_id, data={}, headers=headers_del, timeout=timeout)
+    r = requests.delete(endpoint + '/extractions/files/' + file_id, data={}, headers=headers_del, timeout=timeout)
     r.raise_for_status()
 
     return json.dumps(metadata)

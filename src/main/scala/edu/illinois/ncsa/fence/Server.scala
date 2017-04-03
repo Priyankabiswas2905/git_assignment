@@ -2,7 +2,7 @@ package edu.illinois.ncsa.fence
 
 import java.util.UUID
 
-import com.twitter.finagle.http.Method.{Delete, Get, Post}
+import com.twitter.finagle.http.Method.{Delete, Get, Options, Post}
 import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http.filter.Cors
 import com.twitter.finagle.http.path.{Path, _}
@@ -49,11 +49,22 @@ object Server extends TwitterServer {
     }
   }
 
+  def options(strings: Method*): Service[Request, Response] = {
+    log.debug("Support HTTP OPTIONS: " + strings.mkString(", "))
+    Service.mk { (req: Request) =>
+      val r = Response()
+      r.setContentTypeJson()
+      r.headerMap.add("Access-Control-Allow-Methods", strings.mkString(", "))
+      Future.value(r)
+    }
+  }
+
   /** Swagger documentation */
   def swagger(): Service[Request, Response] = {
     log.debug("Swagger documentation")
     Service.mk { (req: Request) =>
       val r = Response()
+      r.setContentTypeJson()
       val text = Files.readResourceFile("/swagger.json")
       r.setContentString(text)
       Future.value(r)
@@ -112,12 +123,28 @@ object Server extends TwitterServer {
   /** Application router **/
   val router = RoutingService.byMethodAndPathObject[Request] {
 
-    case (Get, Root / "rate") =>
-      tokenFilter andThen rateLimit andThen ok
+    case (Get, Root / "ok") => ok
 
     case (Get, Root) =>
       redirect(conf.getString("docs.root"))
 
+    case (Get, Root / "swagger.json") =>
+      cf andThen swagger
+
+    // Conversion endpoints
+    case (Get, Root / "polyglot" / "alive") =>
+      cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("alive"))
+
+    case (Get | Options, Root / "conversions" / fileType / path) =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.convertURL(fileType, path)
+
+    case (Post | Options, "conversions" /: path) =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.convertBytes("/convert" + path)
+
+    case (_, "polyglot" /: path) =>
+      cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(path)
+
+    // Deprecated DAP (Polyglot) endpoints
     case (Get, Root / "dap" / "alive") =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("alive"))
 
@@ -130,6 +157,35 @@ object Server extends TwitterServer {
     case (_, "dap" /: path) =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(path)
 
+    // Extraction endpoints
+    case (Post | Options, Root / "extractions" / "files" / fileId) =>
+      cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files/" + fileId + "/extractions")
+
+    case (Delete, Root / "extractions" / "files" / fileId) =>
+      cf andThen tokenFilter andThen quotas andThen Clowder.clowderCatchAll(Path("/api/files/" + fileId))
+
+    case (_, Root / "extractions" / "files" / fileId / "metadata.jsonld" ) =>
+      cf andThen tokenFilter andThen quotas andThen Clowder.clowderCatchAll(Path("/api/files/" + fileId + "/metadata.jsonld"))
+
+    case (Post, Root / "extractions" / "upload_file") =>
+      cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/extractions/upload_file")
+
+    case (Post, Root / "extractions" / "upload_url") =>
+      cf andThen tokenFilter andThen quotas andThen Clowder.extractURL("/api/extractions/upload_url")
+
+    case (_, Root / "extractions" / fileId / "status") =>
+      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractions/" + fileId + "/status"))
+
+    case (Post, Root / "extractions" / fileId) =>
+      cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files/" + fileId + "/extractions")
+
+    case (_, Root / "extractors") =>
+      cf andThen tokenFilter andThen Clowder.extractorsInfoPath("/get-extractors-info")
+
+    case (_, "extractions" /: path) =>
+      cf andThen tokenFilter andThen Clowder.clowderCatchAll(path)
+
+    // Deprecated DTS (Clowder) endpoints
     case (Post, Root / "dts" / "api" / "files") =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files")
 
@@ -145,16 +201,35 @@ object Server extends TwitterServer {
     case (_, "dts" /: path) =>
       cf andThen tokenFilter andThen Clowder.clowderCatchAll(path)
 
-    case (Get, Root / "ok") => ok
+    // Datawolf endpoint
+    case (_, Root / "provenance") =>
+      cf andThen tokenFilter andThen Datawolf.datawolfPath("/browndog/provenance")
+
+    // Deprecated Datawolf endpoint
+    case (_, Root / "dw" / "provenance") =>
+      cf andThen tokenFilter andThen Datawolf.datawolfPath("/browndog/provenance")
+
+    // Keys and Tokens
+    case (Options, Root / "keys") =>
+      cf andThen options(Post)
 
     case (Post, Root / "keys") =>
       cf andThen userAuth andThen Auth.createApiKey()
 
+    case (Options, Root / "keys" / key) =>
+      cf andThen options(Delete)
+
     case (Delete, Root / "keys" / key) =>
       cf andThen userAuth andThen Auth.deleteApiKey(key)
 
+    case (Options, Root / "keys" / key / "tokens") =>
+      cf andThen options(Post)
+
     case (Post, Root / "keys" / key / "tokens") =>
       cf andThen Auth.newAccessToken(UUID.fromString(key))
+
+    case (Options, Root / "tokens" / token) =>
+      cf andThen options(Get, Delete)
 
     case (Get, Root / "tokens" / token) =>
       cf andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
@@ -164,6 +239,10 @@ object Server extends TwitterServer {
 
     case (Get, Root / "crowd" / "session") =>
       cf andThen Crowd.session()
+
+    // Events and Stats
+    case (Options, Root / "events" / "latest") =>
+      cf andThen options(Get)
 
     case (Get, Root / "events" / "latest") =>
       cf andThen tokenFilter andThen Events.latestEvents()
@@ -176,15 +255,6 @@ object Server extends TwitterServer {
 
     case (Get, Root / "stats") =>
       cf andThen Events.stats()
-
-    case (_, Root / "dw" / "provenance") =>
-      cf andThen tokenFilter andThen Datawolf.datawolfPath("/browndog/provenance")
-
-    case (_, Root / "extractors") =>
-      cf andThen tokenFilter andThen Clowder.extractorsInfoPath("/get-extractors-info")
-
-    case (Get, Root / "swagger.json") =>
-      cf andThen swagger
 
     case _ => notFound
   }

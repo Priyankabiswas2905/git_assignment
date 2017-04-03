@@ -18,7 +18,7 @@ def test_get_convert(host, api_token, timeout, conversion_data):
     print "Converting from :", conversion_data['file_url']
     print "Converting to   :", conversion_data['output_type']
 
-    endpoint = host + '/dap'
+    endpoint = host
     input_filename = conversion_data['file_url']
     output = conversion_data['output_type']
     output_path = '/tmp/' + str(0) + '_' + splitext(basename(input_filename))[0] + '.' + output
@@ -46,6 +46,6 @@ def test_get_convert(host, api_token, timeout, conversion_data):
 def convert_by_url(endpoint, api_token, input_filename, output, timeout):
     """Pass file to Polyglot Steward."""
     headers = {'Authorization': api_token, 'Accept': 'text/plain'}
-    api_call = endpoint + '/convert/' + output + '/' + urllib.quote_plus(input_filename)
+    api_call = endpoint + '/conversions/' + output + '/' + urllib.quote_plus(input_filename)
     print "API Call        :", api_call
     return requests.get(api_call, headers=headers, timeout=timeout)
