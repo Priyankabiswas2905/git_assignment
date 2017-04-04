@@ -55,6 +55,16 @@
   file_url: http://browndog.ncsa.illinois.edu/examples/plane.dxf
   output_type: jpg
 -
+  description: Test PEcAn conversion, Ameriflux to netCDF-CF
+  skip: broken, see BD-1555
+  file_url: http://browndog.ncsa.illinois.edu/examples/pecan/US-Dk3-2001-2003.xml
+  output_type: pecan.zip
+-
+  description: Test chained PEcAn conversion, Ameriflux to netCDF-CF to SIPNET format
+  skip: broken, see BD-1556
+  file_url: http://browndog.ncsa.illinois.edu/examples/pecan/US-Dk3-2001-2003.xml
+  output_type: clim
+-
   description: Test PEcAn conversion, Ameriflux to SIPNET
   file_url: http://browndog.ncsa.illinois.edu/examples/pecan/ameriflux.sipnet.xml
   output_type: clim
