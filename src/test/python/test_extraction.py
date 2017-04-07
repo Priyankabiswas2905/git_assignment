@@ -27,6 +27,7 @@ def test_get_extract(host, api_token, timeout, extraction_data):
 
 
 def extract_by_url(endpoint, api_token, input_url, extractor, timeout):
+    metadata = []
     headers_json = {'Authorization': api_token, 'Content-Type': 'application/json'}
     headers_del = {'Authorization': api_token}
     api_call = endpoint + '/extractions/upload_url'
@@ -42,21 +43,32 @@ def extract_by_url(endpoint, api_token, input_url, extractor, timeout):
 
     # trigger extractor, and check specific output
     if extractor != 'all':
-        r = requests.post("%s/files/%s/extractions" % (endpoint, file_id), headers=headers_json,
-                          timeout=timeout, data=json.dumps({"extractor": extractor}))
-        r.raise_for_status()
-
-        # Wait for the right metadata to be ready
+        # Wait for the file upload to complete before issuing extraction request
         stoptime = time.time() + timeout
-        metadata = []
-        while stoptime > time.time():
-            r = requests.get('%s/files/%s/metadata.jsonld?extractor=%s' % (endpoint, file_id, extractor),
-                             headers=headers_json, timeout=timeout)
+        file_uploaded = False
+        while not file_uploaded and stoptime > time.time():
+            r = requests.get("%s/files/%s/metadata" % (endpoint, file_id), headers=headers_json, timeout=timeout)
             r.raise_for_status()
-            if r.text != '[]':
-                metadata = r.json()
-                break
+            if r.json()['status'] == "PROCESSED":
+                file_uploaded = True
             time.sleep(1)
+
+        if file_uploaded:
+            # Submit file for extraction
+            r = requests.post("%s/files/%s/extractions" % (endpoint, file_id), headers=headers_json,
+                              timeout=timeout, data=json.dumps({"extractor": extractor}))
+            r.raise_for_status()
+
+            # Wait for the right metadata to be ready
+            stoptime = time.time() + timeout
+            while stoptime > time.time():
+                r = requests.get('%s/files/%s/metadata.jsonld?extractor=%s' % (endpoint, file_id, extractor),
+                                 headers=headers_json, timeout=timeout)
+                r.raise_for_status()
+                if r.text != '[]':
+                    metadata = r.json()
+                    break
+                time.sleep(1)
 
     else:
         # Poll until output is ready (optional)
