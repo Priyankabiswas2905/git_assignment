@@ -264,12 +264,12 @@ object Server extends TwitterServer {
 
   /**
     * Convert file embedded in the body to a specific file type specified in the URL using Polyglot.
-    * @param path path forwarded on to Polyglot
+    * @param fileType path forwarded on to Polyglot
     */
-  def convertBytes(path: String): Service[Request, Response] = {
-    log.debug("[Endpoint] Streaming polyglot upload " + path)
+  def convertBytes(fileType: String): Service[Request, Response] = {
+    log.debug("[Endpoint] Streaming polyglot upload with file type " + fileType)
     Service.mk { (req: Request) =>
-      val newPathWithParameters = path + getURIParams(req)
+      val newPathWithParameters = fileType + "/" + Server.getURIParams(req)
       val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
