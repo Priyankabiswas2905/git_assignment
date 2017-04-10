@@ -3,11 +3,9 @@
   file_url: http://browndog.ncsa.illinois.edu/examples/links.txt
   output_type: html
 -
- description: Converts between TIFF and BIL (zip) and FLT (zip)
- skip: Not deployed on production yet
- file_url: https://isda.ncsa.illinois.edu/browndog/data/gdal_converter/head_hills.tif
- output_type: bil.zip
-
+  description: Converts between TIFF and BIL (zip) and FLT (zip)
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/gdal_converter/head_hills.tif
+  output_type: bil.zip
 -
   description: Test image conversion (chained), JPEG-2000 to BMP to JPG
   file_url: http://browndog.ncsa.illinois.edu/examples/0005.jp2
@@ -61,11 +59,6 @@
   skip: broken, see BD-1555
   file_url: http://browndog.ncsa.illinois.edu/examples/pecan/US-Dk3-2001-2003.xml
   output_type: pecan.zip
--
-  description: Test chained PEcAn conversion, Ameriflux to netCDF-CF to SIPNET format
-  skip: broken, see BD-1556
-  file_url: http://browndog.ncsa.illinois.edu/examples/pecan/US-Dk3-2001-2003.xml
-  output_type: clim
 -
   description: Test PEcAn conversion, Ameriflux to SIPNET
   file_url: http://browndog.ncsa.illinois.edu/examples/pecan/ameriflux.sipnet.xml

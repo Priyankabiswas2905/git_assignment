@@ -50,11 +50,6 @@
   extractor: ncsa.cv.eyes
   output: '"content": {"eyes"'
 -
-  description: Test ncsa.arcgis.floodplain
-  extractor: ncsa.arcgis.floodplain
-  file_url: https://isda.ncsa.illinois.edu/browndog/data/floodplain_extractor/floodplain_data.zip
-  output: generated_dataset
--
   description: Test ncsa.image.caltech101
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/raw/extractors-vlfeat/test/airplane.jpg
   extractor: ncsa.cv.caltech101
@@ -81,7 +76,6 @@
   output: '"ocr_text": "The BrownDog project"'
 -
   description: Test ncsa.cv.river extractor
-  skip: Not deployed on production yet
   extractor: ncsa.cv.river
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-cv/raw/extractors-river/tests/39-72.tif
   output: '"content": {"generated_file"'
@@ -98,29 +92,8 @@
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/VIS_SV_180_z1_1207272.png
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/test_VIS_SV_180_z1_1207272.png.txt
 -
-  description: Test ncsa.video.person_tracking
-  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-tracking/raw/tests/input.mp4
-  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-tracking/raw/tests/test_output.json
-  extractor: ncsa.video.person_tracking
--
-  description: Test ncsa.video.person_detector
-  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/input.mp4
-  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/test_output.json
-  extractor: ncsa.video.person_detector
--
-  description: Test ncsa.arcgis.treedelin
-  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/2014_OSBS_1_400000_3279000_CHM.tif
-  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/test_output.txt
-  extractor: ncsa.arcgis.treedelin
--
-  description: Test ncsa.arcgis.landsat7mosaic
-  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/input_landsat.zip
-  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/test_output.txt
-  extractor: ncsa.arcgis.landsat7mosaic
-  output: The BrownDog project
--
   description: Test ncsa.image.metadata
-  skip: Failing test on prod
+  skip: Status unknown
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-core/raw/image/metadata/tests/godzilla.gif
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-core/browse/image/metadata/tests/test_godzilla.gif.txt
 
