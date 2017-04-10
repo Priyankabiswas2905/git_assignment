@@ -112,3 +112,8 @@
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/2014_OSBS_1_400000_3279000_CHM.tif
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/test_output.txt
   extractor: ncsa.arcgis.treedelin
+-
+  description: Test ncsa.arcgis.landsat7mosaic
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/input_landsat.zip
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/test_output.txt
+  extractor: ncsa.arcgis.landsat7mosaic
