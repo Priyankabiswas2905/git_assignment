@@ -117,3 +117,10 @@
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/input_landsat.zip
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/test_output.txt
   extractor: ncsa.arcgis.landsat7mosaic
+  output: The BrownDog project
+-
+  description: Test ncsa.image.metadata
+  skip: Failing test on prod
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-core/raw/image/metadata/tests/godzilla.gif
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-core/browse/image/metadata/tests/test_godzilla.gif.txt
+
