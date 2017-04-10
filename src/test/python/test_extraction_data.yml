@@ -9,6 +9,11 @@
 # returned by extractor with id X. If this is not the case don't specify extractor, however this could lead to
 # false negatives, and longer execution times.
 -
+  description: Test ncsa.versus.image
+  file_url: https://isda.ncsa.illinois.edu/browndog/data/versus_extractor/test.jpg
+  extractor: ncsa.versus.image
+  output: https://isda.ncsa.illinois.edu/browndog/data/versus_extractor/output.json
+-
   description: Test ncsa.geoshp.preview
   file_url: https://isda.ncsa.illinois.edu/browndog/data/geoship_extractor/states.zip
   skip: not deploy on dev and prod yet
@@ -32,6 +37,7 @@
 -
   description: Test ncsa.cv.meangrey
   file_url: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/ncsa.jpg
+  extractor: ncsa.cv.meangrey
   output: https://isda.ncsa.illinois.edu/browndog/data/meangrey_extractor/output.json
 -
   description: Test ncsa.cv.face extractor for true positive
@@ -46,7 +52,6 @@
 -
   description: Test ncsa.arcgis.floodplain
   extractor: ncsa.arcgis.floodplain
-  skip: extractor is being fixed as part of BD-1465
   file_url: https://isda.ncsa.illinois.edu/browndog/data/floodplain_extractor/floodplain_data.zip
   output: generated_dataset
 -
@@ -88,6 +93,7 @@
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-maps/raw/extractors-tuv/test/Manitowoc_01.csv.txt
 -
   description: Test terra.plantcv extractor
+  skip: takes longer than 5 minutes
   extractor: terra.plantcv
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/VIS_SV_180_z1_1207272.png
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-plantcv/raw/test/test_VIS_SV_180_z1_1207272.png.txt
@@ -101,3 +107,13 @@
   file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/input.mp4
   output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-person-detector/raw/tests/test_output.json
   extractor: ncsa.video.person_detector
+-
+  description: Test ncsa.arcgis.treedelin
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/2014_OSBS_1_400000_3279000_CHM.tif
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/tree_delin/tests/test_output.txt
+  extractor: ncsa.arcgis.treedelin
+-
+  description: Test ncsa.arcgis.landsat7mosaic
+  file_url: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/input_landsat.zip
+  output: https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/extractors-bd-cz/raw/ndviextractor/tests/test_output.txt
+  extractor: ncsa.arcgis.landsat7mosaic
