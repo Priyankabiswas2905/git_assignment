@@ -68,6 +68,6 @@ def convert_by_file(endpoint, api_token, input_filename, output, timeout):
     api_call = endpoint + '/convert/' + output + '/'
     boundary = 'browndog-fence-header'
     files = [('file', (input_filename, mimetypes.guess_type(input_filename)[0] or 'application/octet-stream'))]
-    return requests.post(api_call, headers={'Accept': 'text/plain', 'Authorization': api_token,
+    return requests.post(api_call, headers={'Accept': 'application/json', 'Authorization': api_token,
                               'Content-Type': 'multipart/form-data; boundary=' + boundary},
                               data=multipart([], files, boundary, 5 * 1024 * 1024))
