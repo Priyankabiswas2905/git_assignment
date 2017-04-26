@@ -12,8 +12,10 @@ def pytest_addoption(parser):
                      help="Username: Either from crowd or application.conf depending how fence was setup")
     parser.addoption("--password", action="store", default="fred",
                      help="Password: Either from crowd or application.conf depending how fence was setup")
-    parser.addoption("--timeout", action="store", default="300",
+    parser.addoption("--request_timeout", action="store", default="5",
                      help="requests timeout")
+    parser.addoption("--processing_timeout", action="store", default="300",
+                     help="Timeout for completing extraction or conversion process")
     parser.addoption("--mongo_host", action="store", default="fred",
                      help="Password: Either from crowd or application.conf depending how fence was setup")
     parser.addoption("--mongo_db", action="store", default="fred",
@@ -38,8 +40,13 @@ def password(request):
 
 
 @pytest.fixture(scope="module")
-def timeout(request):
-    return int(request.config.getoption("--timeout"))
+def request_timeout(request):
+    return int(request.config.getoption("--request_timeout"))
+
+
+@pytest.fixture(scope="module")
+def processing_timeout(request):
+    return int(request.config.getoption("--processing_timeout"))
 
 
 @pytest.fixture
@@ -108,23 +115,3 @@ def id_function(val):
     return val['description']
 
 
-def download_file(url, filename, api_token, wait):
-    """Download file at given URL"""
-    if not filename:
-        filename = url.split('/')[-1]
-    try:
-        headers = {'Authorization': api_token}
-        r = requests.get(url, headers=headers, stream=True)
-        while (wait > 0 and r.status_code == 404):
-            time.sleep(1)
-            wait -= 1
-            r = requests.get(url, headers=headers, stream=True)
-        if (r.status_code != 404):
-            with open(filename, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=1024):
-                    if chunk:  # Filter out keep-alive new chunks
-                        f.write(chunk)
-                        f.flush()
-    except:
-        raise
-    return filename

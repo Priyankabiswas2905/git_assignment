@@ -2,6 +2,26 @@ import os
 import urllib2
 import tempfile
 
+def download_file(url, filename, api_token, stoptime):
+    """Download file at given URL"""
+    if not filename:
+        filename = url.split('/')[-1]
+    try:
+        headers = {'Authorization': api_token}
+        r = requests.get(url, headers=headers, stream=True)
+        while (stoptime > time.time() and r.status_code == 404):
+            time.sleep(1)
+            r = requests.get(url, headers=headers, stream=True)
+        if (r.status_code != 404):
+            with open(filename, 'wb') as f:
+                for chunk in r.iter_content(chunk_size=1024):
+                    if chunk:  # Filter out keep-alive new chunks
+                        f.write(chunk)
+                        f.flush()
+    except:
+        raise
+    return filename
+
 def download_file_web(url):
     u = urllib2.urlopen(url)
     file_name = url.split('/')[-1]
