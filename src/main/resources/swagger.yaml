@@ -1,0 +1,1612 @@
+swagger: '2.0'
+info:
+  title: Brown Dog API
+  description: 'Documentation for the [Brown Dog](http://browndog.ncsa.illinois.edu/) API'
+  termsOfService: 'http://browndog.ncsa.illinois.edu'
+  contact:
+    name: Brown Dog Support
+    url: >-
+      https://opensource.ncsa.illinois.edu/confluence/questions/topics/41156618/brown-dog
+    email: sbrad77@illinois.edu
+  license:
+    name: University of Illinois/NCSA Open Source License
+    url: 'https://opensource.org/licenses/NCSA'
+  version: 0.1.0
+host: 'localhost:8080'
+basePath: /
+schemes:
+  - http
+produces:
+  - application/json
+securityDefinitions:
+  token:
+    type: apiKey
+    in: header
+    name: Authorization
+  login:
+    type: basic
+paths:
+  /keys:
+    post:
+      summary: Create a new api key
+      description: Create a new api key
+      tags:
+        - Authorization
+      security:
+        - login: []
+      responses:
+        '200':
+          description: Newly created api key
+          schema:
+            $ref: '#/definitions/APIKey'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/keys/{key}/tokens':
+    post:
+      summary: Create a new access token from api key
+      description: >
+        Most endpoints require a token. API keys are unique and never expire. 
+
+        Users, however, can create as many tokens as they want which are in turn
+        associated with their key. 
+
+        Tokens expire after 24 hours. After that a new token will have to be
+        created.
+      tags:
+        - Authorization
+      parameters:
+        - name: key
+          in: path
+          description: API Key
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Newly created token
+          schema:
+            $ref: '#/definitions/Token'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/keys/{key}':
+    delete:
+      summary: Delete api key and all related access tokens
+      description: Delete api key and all related access tokens
+      tags:
+        - Authorization
+      security:
+        - login: []
+      parameters:
+        - name: key
+          in: path
+          description: API Key
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Whether the operation was successful or not
+          schema:
+            $ref: '#/definitions/Status'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/tokens/{token}':
+    get:
+      summary: Get info about token
+      description: >
+        Retrieves whether the token is still alive and what the remaining time
+        to live is. 
+      tags:
+        - Authorization
+      security:
+        - login: []
+      parameters:
+        - name: token
+          in: path
+          description: Access token
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Newly created token
+          schema:
+            $ref: '#/definitions/TokenInfo'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      summary: Delete token
+      description: Delete token
+      tags:
+        - Authorization
+      security:
+        - login: []
+      parameters:
+        - name: token
+          in: path
+          description: Access token
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Whether the operation was successful or not
+          schema:
+            $ref: '#/definitions/Status'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /events/latest:
+    get:
+      summary: Get latest n events
+      description: >
+        Get latest n events, where n is specified as a query parameter.
+      tags:
+        - Events
+      security:
+        - token: []
+      parameters:
+        - name: limit
+          in: query
+          description: How many events to show
+          required: true
+          type: integer
+      responses:
+        '200':
+          description: List of events
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Event'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /conversions/outputs:
+    get:
+      summary: List all output formats that can be reached
+      description: |
+        List all output formats that can be reached
+      tags:
+        - Conversions
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /conversions/inputs:
+    get:
+      summary: >-
+        List all input formats that can be accepted. Limit the number of hops
+        allowed by setting chain parameter, e.g. ?chain=2
+      description: >-
+        List all input formats that can be accepted. Limit the number of hops
+        allowed by setting chain parameter, e.g. ?chain=2
+      tags:
+        - Conversions
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/inputs/{input_format}':
+    get:
+      summary: List all output formats that can reach the specified input format
+      description: List all output formats that can reach the specified input format
+      tags:
+        - Conversions
+      parameters:
+        - name: input_format
+          in: path
+          description: Input file format. For example jpg.
+          required: true
+          type: string
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /conversions:
+    get:
+      summary: List all output formats that can be reached
+      description: List all output formats that can be reached
+      tags:
+        - Conversions
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/{output_format}':
+    get:
+      summary: List all input formats that can reach the specified output format
+      description: List all input formats that can reach the specified output format
+      tags:
+        - Conversions
+      security:
+        - token: []
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      summary: Convert the uploaded file to the requested output format
+      description: |
+        Convert the uploaded file to the requested output format
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+            format: binary
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/{output_format}/{file_url}':
+    get:
+      summary: Convert the specified file to the requested output format
+      description: |
+        Convert the specified file to the requested output format
+      security:
+        - token: []
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+        - name: file_url
+          in: path
+          description: Encoded url of file we want to download and convert.
+          required: true
+          type: string
+        - name: application
+          in: query
+          description: >
+            Specific software application to use for this conversion. For example
+            PEcAn.
+          required: false
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: Link to converted file
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/path/{output_format}/{input_format}':
+    get:
+      summary: Return the conversion path that would be used for this conversion
+      description: |
+        Return the conversion path that would be used for this conversion
+      security:
+        - token: []
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+        - name: input_format
+          in: path
+          description: Input file format.  For example sid.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: Optimal conversion path.
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /conversions/software:
+    get:
+      summary: List all available conversion software
+      description: |
+        List all available conversion software
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/software/{software}':
+    get:
+      summary: List all output formats available for this software
+      description: |
+        List all output formats available for this software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available output formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/software/{software}/{output_format}':
+    get:
+      summary: List all input formats available for this software
+      description: |
+        List all input formats available for this software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+        - name: output_format
+          in: path
+          description: Output format. For example jpg.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available input formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      summary: >-
+        Convert the uploaded file to the requested output format using the
+        specified software
+      description: >
+        Convert the uploaded file to the requested output format using the
+        specified software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+        - name: output_format
+          in: path
+          description: Output format. For example jpg.
+          required: true
+          type: string
+        - name: application
+          in: query
+          description: >
+            Specific software application to use for this conversion. For example
+            PEcAn.
+          required: false
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/software/{software}/{output_format}/{file_url}':
+    get:
+      summary: >-
+        Convert the specified file to the requested output format using the
+        specified software
+      description: >
+        Convert the specified file to the requested output format using the
+        specified software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+        - name: output_format
+          in: path
+          description: Output format. For example jpg.
+          required: true
+          type: string
+        - name: file_url
+          in: path
+          description: URL encoded remote file URL
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /conversions/servers:
+    get:
+      summary: List all currently available Software Servers
+      description: |
+        List all currently available Software Servers
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software servers
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractions/supported_input_types:
+    get:
+      summary: Lists the input file format supported by currently running extractors
+      description: |
+        Lists the input file format supported by currently running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractions/upload_url:
+    post:
+      summary: Uploads a file for extraction using the file's URL
+      description: |
+        Uploads a file for extraction using the file's URL
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/FileURL'
+      security:
+        - token: []
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractions/upload_file:
+    post:
+      summary: Uploads a file in the body for extraction of metadata
+      description: |
+        Uploads a file for extraction using the file's URL
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+            format: binary
+      security:
+        - token: []
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/extractions/{file_id}/status':
+    get:
+      summary: Checks for the status of all extractors processing the file with id
+      description: |
+        Checks for the status of all extractors processing the file with id
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/extractions/files/{file_id}/metadata.jsonld':
+    get:
+      summary: Get metadata associated with the file (in JSON-LD)
+      description: |
+        Get metadata associated with the file (in JSON-LD)
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: Metadata in JSON-LD format
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/extractions/files/{file_id}/tags':
+    get:
+      summary: Gets tags associated with the file
+      description: |
+        Gets tags associated with the file
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of tags
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/extractions/files/{file_id}/versusmetadata':
+    get:
+      summary: Get Versus metadata associated with the file
+      description: |
+        Get Versus metadata associated with the file
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of feature vectors
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/extractions/files/{file_id}/extractions':
+    post:
+      summary: Uploads a file in the body for extraction of metadata
+      description: |
+        Uploads a file for extraction using the file's URL
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmissionToExtractor'
+      security:
+        - token: []
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractors/registered:
+    get:
+      summary: Lists the past and present registered extractors
+      description: |
+        Lists the past and present registered extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of extractor ids
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractors/running:
+    get:
+      summary: Lists the currently running extractors
+      description: |
+        Lists the currently running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of extractor ids
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractors/details:
+    get:
+      summary: Lists the details of the currently running extractors
+      description: |
+        Lists the details of the currently running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of extractor details
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractors:
+    get:
+      summary: >-
+        List all extractors that would be executed for the given file type
+        specified in the parameters, e.g. ?file_type=image/jpeg
+      description: >
+        List all extractors that would be executed for the given file type
+        specified in the parameters, e.g. ?filey_type-image/jpeg
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: A list of extractors
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractions/servers_ips:
+    get:
+      summary: Lists servers hosting running extractors
+      description: |
+        Lists servers hosting running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of server IPs
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /provenance:
+    get:
+      summary: Display an editable workflow for a given transformation
+      description: |
+        Display an editable workflow for a given transformation
+      tags:
+        - Provenance
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmissionToDataWolf'
+      responses:
+        '200':
+          description: A workflow
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dap/outputs:
+    get:
+      deprecated: true
+      summary: List all output formats that can be reached
+      description: |
+        List all output formats that can be reached
+      tags:
+        - Conversions
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dap/inputs:
+    get:
+      deprecated: true
+      summary: >-
+        List all input formats that can be accepted. Limit the number of hops
+        allowed by setting chain parameter, e.g. ?chain=2
+      description: >-
+        List all input formats that can be accepted. Limit the number of hops
+        allowed by setting chain parameter, e.g. ?chain=2
+      tags:
+        - Conversions
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dap/inputs/{input_format}':
+    get:
+      deprecated: true
+      summary: List all output formats that can reach the specified input format
+      description: List all output formats that can reach the specified input format
+      tags:
+        - Conversions
+      parameters:
+        - name: input_format
+          in: path
+          description: Input file format. For example jpg.
+          required: true
+          type: string
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dap/convert:
+    get:
+      deprecated: true
+      summary: List all output formats that can be reached
+      description: List all output formats that can be reached
+      tags:
+        - Conversions
+      security:
+        - token: []
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dap/convert/{output_format}':
+    get:
+      deprecated: true
+      summary: List all input formats that can reach the specified output format
+      description: List all input formats that can reach the specified output format
+      tags:
+        - Conversions
+      security:
+        - token: []
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      deprecated: true
+      summary: Convert the uploaded file to the requested output format
+      description: |
+        Convert the uploaded file to the requested output format
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+            format: binary
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available output file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dap/convert/{output_format}/{file_url}':
+    get:
+      deprecated: true
+      summary: Convert the specified file to the requested output format
+      description: |
+        Convert the specified file to the requested output format
+      security:
+        - token: []
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+        - name: file_url
+          in: path
+          description: Encoded url of file we want to download and convert.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: Link to converted file
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dap/path/{output_format}/{input_format}':
+    get:
+      deprecated: true
+      summary: Return the conversion path that would be used for this conversion
+      description: |
+        Return the conversion path that would be used for this conversion
+      security:
+        - token: []
+      parameters:
+        - name: output_format
+          in: path
+          description: Output file format. For example jpg.
+          required: true
+          type: string
+        - name: input_format
+          in: path
+          description: Input file format.  For example sid.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: Optimal conversion path.
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dap/software:
+    get:
+      deprecated: true
+      summary: List all available conversion software
+      description: |
+        List all available conversion software
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dap/software/{software}':
+    get:
+      deprecated: true
+      summary: List all output formats available for this software
+      description: |
+        List all output formats available for this software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available output formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dap/software/{software}/{output_format}':
+    get:
+      deprecated: true
+      summary: List all input formats available for this software
+      description: |
+        List all input formats available for this software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+        - name: output_format
+          in: path
+          description: Output format. For example jpg.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available input formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      deprecated: true
+      summary: >-
+        Convert the uploaded file to the requested output format using the
+        specified software
+      description: >
+        Convert the uploaded file to the requested output format using the
+        specified software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+        - name: output_format
+          in: path
+          description: Output format. For example jpg.
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dap/software/{software}/{output_format}/{file_url}':
+    get:
+      deprecated: true
+      summary: >-
+        Convert the specified file to the requested output format using the
+        specified software
+      description: >
+        Convert the specified file to the requested output format using the
+        specified software
+      parameters:
+        - name: software
+          in: path
+          description: Software name.
+          required: true
+          type: string
+        - name: output_format
+          in: path
+          description: Output format. For example jpg.
+          required: true
+          type: string
+        - name: file_url
+          in: path
+          description: URL encoded remote file URL
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dap/servers:
+    get:
+      deprecated: true
+      summary: List all currently available Software Servers
+      description: |
+        List all currently available Software Servers
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: An array of available conversion software servers
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dts/api/extractions/supported_input_types:
+    get:
+      deprecated: true
+      summary: Lists the input file format supported by currently running extractors
+      description: |
+        Lists the input file format supported by currently running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dts/api/extractions/upload_url:
+    post:
+      deprecated: true
+      summary: Uploads a file for extraction using the file's URL
+      description: |
+        Uploads a file for extraction using the file's URL
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/FileURL'
+      security:
+        - token: []
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dts/api/extractions/upload_file:
+    post:
+      deprecated: true
+      summary: Uploads a file in the body for extraction of metadata
+      description: |
+        Uploads a file for extraction using the file's URL
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            type: string
+            format: binary
+      security:
+        - token: []
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dts/api/extractions/{file_id}/status':
+    get:
+      deprecated: true
+      summary: Checks for the status of all extractors processing the file with id
+      description: |
+        Checks for the status of all extractors processing the file with id
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of available input file formats
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dts/api/files/{file_id}/metadata.jsonld':
+    get:
+      deprecated: true
+      summary: Get metadata associated with the file (in JSON-LD)
+      description: |
+        Get metadata associated with the file (in JSON-LD)
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: Metadata in JSON-LD format
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dts/api/files/{file_id}/tags':
+    get:
+      deprecated: true
+      summary: Gets tags associated with the file
+      description: |
+        Gets tags associated with the file
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of tags
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dts/api/files/{file_id}/versusmetadata':
+    get:
+      deprecated: true
+      summary: Get Versus metadata associated with the file
+      description: |
+        Get Versus metadata associated with the file
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of feature vectors
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/dts/api/files/{file_id}/extractions':
+    post:
+      deprecated: true
+      summary: Uploads a file in the body for extraction of metadata
+      description: |
+        Uploads a file for extraction using the file's URL
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmissionToExtractor'
+      security:
+        - token: []
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dts/api/extractors:
+    get:
+      deprecated: true
+      summary: Lists the past and present registered extractors
+      description: |
+        Lists the past and present registered extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of extractor ids
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dts/api/extractions/extractors_names:
+    get:
+      deprecated: true
+      summary: Lists the currently running extractors
+      description: |
+        Lists the currently running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of extractor ids
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dts/api/extractions/extractors_details:
+    get:
+      deprecated: true
+      summary: Lists the details of the currently running extractors
+      description: |
+        Lists the details of the currently running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of extractor details
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dts/api/extractions/servers_ips:
+    get:
+      deprecated: true
+      summary: Lists servers hosting running extractors
+      description: |
+        Lists servers hosting running extractors
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: An array of server IPs
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /dw/provenance:
+    get:
+      deprecated: true
+      summary: Display an editable workflow for a given transformation
+      description: |
+        Display an editable workflow for a given transformation
+      tags:
+        - Provenance
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmissionToDataWolf'
+      responses:
+        '200':
+          description: A workflow
+          schema:
+            type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+definitions:
+  Status:
+    type: object
+    properties:
+      fileurl:
+        type: string
+        description: Whether the operation was successfull or not
+  FileURL:
+    type: object
+    properties:
+      fileurl:
+        type: string
+        description: URL of remote file
+  APIKey:
+    type: object
+    properties:
+      api-key:
+        type: string
+        description: API key
+  Token:
+    type: object
+    properties:
+      token:
+        type: string
+        description: Access token (expires after 24 hours)
+  TokenInfo:
+    type: object
+    properties:
+      found:
+        type: string
+        description: Whether the token is still active or not
+      ttl:
+        type: integer
+        description: Remaning time to live
+  SubmissionToExtractor:
+    type: object
+    properties:
+      extractor:
+        type: string
+        description: 'Extractor id, for example ncsa.image.metadata'
+  SubmissionToDataWolf:
+    type: object
+    properties:
+      file:
+        type: string
+        description: 'File id, for example URL to DAP output or file ID for DTS input'
+  Event:
+    type: object
+    properties:
+      clientIP:
+        type: string
+      date:
+        type: string
+      resource:
+        type: string
+      eventType:
+        type: string
+      user:
+        type: string
+  Error:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+      message:
+        type: string
+      fields:
+        type: string

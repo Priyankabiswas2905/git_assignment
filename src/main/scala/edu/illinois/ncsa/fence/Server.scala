@@ -49,6 +49,11 @@ object Server extends TwitterServer {
     }
   }
 
+  /**
+    * Return supported HTTP methods for a specific OPTIONS request.
+    * @param strings list of supported methods
+    * @return a service
+    */
   def options(strings: Method*): Service[Request, Response] = {
     log.debug("Support HTTP OPTIONS: " + strings.mkString(", "))
     Service.mk { (req: Request) =>
@@ -59,13 +64,18 @@ object Server extends TwitterServer {
     }
   }
 
-  /** Swagger documentation */
-  def swagger(): Service[Request, Response] = {
-    log.debug("Swagger documentation")
+  /**
+    * Serve static file available in classpath.
+    *
+    * @param path file path in classpath
+    * @return a service
+    */
+  def staticFile(path: String): Service[Request, Response] = {
+    log.debug("[Endpoint] Serving static file " + path)
     Service.mk { (req: Request) =>
       val r = Response()
       r.setContentTypeJson()
-      val text = Files.readResourceFile("/swagger.json")
+      val text = Files.readResourceFile(path)
       r.setContentString(text)
       Future.value(r)
     }
@@ -129,7 +139,10 @@ object Server extends TwitterServer {
       redirect(conf.getString("docs.root"))
 
     case (Get, Root / "swagger.json") =>
-      cf andThen swagger
+      cf andThen staticFile("/swagger.json")
+
+    case (Get, Root / "swagger.yaml") =>
+      cf andThen staticFile("/swagger.yaml")
 
     // Conversion endpoints
     case (Get, Root / "polyglot" / "alive") =>
