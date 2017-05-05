@@ -41,7 +41,7 @@ object Server extends TwitterServer {
   val clowder = getService("dts")
 
   /** https://opensource.ncsa.illinois.edu/bitbucket/projects/WOLF */
-  val dw = getService("dw")
+  val datawolf = getService("dw")
 
   /** https://opensource.ncsa.illinois.edu/bitbucket/projects/BD/repos/bd-aux-services/browse/extractor-info-fetcher */
   val extractorsInfo = getService("extractorsinfo")
@@ -469,7 +469,36 @@ object Server extends TwitterServer {
       newReq.setContentString(body)
       newReq.headerMap.set(Fields.ContentLength, body.toString.length.toString)
       newReq.headerMap.set(Fields.Host, getServiceHost("dw") + getServiceContextPath("dw"))
-      val rep = dw(newReq)
+      newReq.headerMap.set(GatewayHeaders.usernameHeader, conf.getString("dw.user"))
+      newReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dw"))
+      val rep = datawolf(newReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
+    }
+  }
+  
+  /**
+    * Forward any request on to Clowder.
+    * @param path path to forward to Clowder
+    */
+  def datawolfCatchAll(path: Path) = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
+      log.debug("[Endpoint] DataWolf catch all")
+      val newPathWithParameters = getServiceContextPath("dw") + path + getURIParams(req)
+      val dwReq = Request(req.method, newPathWithParameters)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.trace(s"Headers: $key -> $value")
+          dwReq.headerMap.add(key, value)
+        }
+      }
+      dwReq.headerMap.set(Fields.Authorization, getServiceBasicAuth("dw"))
+      log.debug("DataWolf " + req)
+      val rep = datawolf(dwReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
@@ -590,6 +619,7 @@ object Server extends TwitterServer {
     case (Get, Root / "events") => cf andThen tokenFilter andThen events()
     case (Get, Root / "stats") => cf andThen stats()
     case (_, Root / "dw" / "provenance") => cf andThen tokenFilter andThen datawolfPath("/browndog/provenance")
+    case (_, "dw" /: path) => cf andThen tokenFilter andThen datawolfCatchAll(path)
     case (_, Root / "extractors") => cf andThen tokenFilter andThen extractorsInfoPath("/get-extractors-info")
     case (Get, Root / "swagger.json") => cf andThen swagger
     case _ => notFound
