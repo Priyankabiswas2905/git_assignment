@@ -1,6 +1,11 @@
+import mimetypes
 import os
-import urllib2
 import tempfile
+import time
+import urllib2
+
+import requests
+
 
 def download_file(url, filename, api_token, stoptime):
     """Download file at given URL"""
@@ -9,10 +14,10 @@ def download_file(url, filename, api_token, stoptime):
     try:
         headers = {'Authorization': api_token}
         r = requests.get(url, headers=headers, stream=True)
-        while (stoptime > time.time() and r.status_code == 404):
+        while stoptime > time.time() and r.status_code == 404:
             time.sleep(1)
             r = requests.get(url, headers=headers, stream=True)
-        if (r.status_code != 404):
+        if r.status_code != 404:
             with open(filename, 'wb') as f:
                 for chunk in r.iter_content(chunk_size=1024):
                     if chunk:  # Filter out keep-alive new chunks
@@ -21,6 +26,7 @@ def download_file(url, filename, api_token, stoptime):
     except:
         raise
     return filename
+
 
 def download_file_web(url):
     u = urllib2.urlopen(url)
@@ -32,16 +38,17 @@ def download_file_web(url):
     file_size_dl = 0
     block_sz = 8192
     while True:
-        buffer = u.read(block_sz)
-        if not buffer:
+        dl_buffer = u.read(block_sz)
+        if not dl_buffer:
             break
 
-        file_size_dl += len(buffer)
-        f.write(buffer)
+        file_size_dl += len(dl_buffer)
+        f.write(dl_buffer)
 
     f.close()
-    #print "download file: ", downloaded_filename
+    # print "download file: ", downloaded_filename
     return downloaded_filename
+
 
 def multipart(data, files, boundary, blocksize=1024 * 1024):
     """Creates appropriate body to send with requests.
