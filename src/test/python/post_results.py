@@ -48,9 +48,9 @@ def main():
                 if 'AssertionError: ' in logmsg['message']:
                     logmsg['message'] = re.sub(r".*E +(AssertionError: .*) E +assert.*", r"\1", logmsg['message'])
                 if 'HTTPError: ' in logmsg['message']:
-                    logmsg['message'] = re.sub(r".*E +(HTTPError: .*)  [^ ]*: HTTPError.*", r"\1", logmsg['message'])
+                    logmsg['message'] = re.sub(r".*E +(HTTPError: .*) {2}[^ ]*: HTTPError.*", r"\1", logmsg['message'])
                 if 'OSError: ' in logmsg['message']:
-                    logmsg['message'] = re.sub(r".*E +(OSError: .*)  [^ ]*: OSError.*", r"\1", logmsg['message'])
+                    logmsg['message'] = re.sub(r".*E +(OSError: .*) {2}[^ ]*: OSError.*", r"\1", logmsg['message'])
 
             # hide some private information, combine array into string
             for key in logmsg:

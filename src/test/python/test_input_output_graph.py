@@ -1,5 +1,4 @@
 import requests
-import pytest
 
 
 def test_get_outputs(host, api_token, request_timeout):

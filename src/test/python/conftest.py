@@ -1,6 +1,5 @@
 import pytest
 import requests
-import time
 import ruamel.yaml
 
 
@@ -113,5 +112,3 @@ def pytest_generate_tests(metafunc):
 
 def id_function(val):
     return val['description']
-
-

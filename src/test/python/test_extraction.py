@@ -1,12 +1,7 @@
 import json
 import pytest
-import requests
-import time
-import urllib2
-import tempfile
-import os
-import mimetypes
 from util import *
+
 
 # @pytest.mark.skip(reason="testing conversions")
 def test_get_extract(host, api_token, request_timeout, processing_timeout, extraction_data):
@@ -20,8 +15,8 @@ def test_get_extract(host, api_token, request_timeout, processing_timeout, extra
         extraction_data['file_path'] = download_file_web(extraction_data['file_url'])
         extract(host, api_token, request_timeout, processing_timeout, extraction_data, 'file_path')
 
-def extract(host, api_token, request_timeout, processing_timeout, extraction_data, file_field):
 
+def extract(host, api_token, request_timeout, processing_timeout, extraction_data, file_field):
     print "Description     :", extraction_data['description']
     print "Extractor       :", extraction_data.get('extractor', 'all')
     print "Extracting from :", extraction_data[file_field]
@@ -30,8 +25,8 @@ def extract(host, api_token, request_timeout, processing_timeout, extraction_dat
     endpoint = host + '/dts/api'
     input_url = extraction_data[file_field]
     output = extraction_data['output']
-    metadata = extract_func(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'), request_timeout, processing_timeout)
-    
+    metadata = extract_func(endpoint, api_token, input_url, extraction_data.get('extractor', 'all'),
+                            request_timeout, processing_timeout)
 
     # remove downloaded temporary file
     filename = extraction_data[file_field]
@@ -44,7 +39,7 @@ def extract(host, api_token, request_timeout, processing_timeout, extraction_dat
     assert metadata.find(output) != -1, "Could not find expected text"
 
 
-def extract_func(endpoint, api_token, input_url, extractor, request_timeout, processing_timeou):
+def extract_func(endpoint, api_token, input_url, extractor, request_timeout, processing_timeout):
     metadata = []
     stoptime = time.time() + processing_timeout
     headers_json = {'Authorization': api_token, 'Content-Type': 'application/json'}
@@ -59,12 +54,13 @@ def extract_func(endpoint, api_token, input_url, extractor, request_timeout, pro
         boundary = 'browndog-fence-header'
         files = [('File', (input_url, mimetypes.guess_type(input_url)[0] or 'application/octet-stream'))]
         r = requests.post(api_call,
-                            headers={'Accept': 'application/json', 'Authorization': api_token,
+                          headers={'Accept': 'application/json', 'Authorization': api_token,
                                    'Content-Type': 'multipart/form-data; boundary=' + boundary},
-                            timeout=request_timeout,
-                            data=multipart([], files, boundary, 5 * 1024 * 1024))
+                          timeout=request_timeout,
+                          data=multipart([], files, boundary, 5 * 1024 * 1024))
     else:
-        r = requests.post(api_call, headers=headers_json, timeout=request_timeout, data=json.dumps({"fileurl": input_url}))
+        r = requests.post(api_call, headers=headers_json, timeout=request_timeout,
+                          data=json.dumps({"fileurl": input_url}))
     r.raise_for_status()
     file_id = r.json()['id']
     print("File id " + file_id)
@@ -109,7 +105,7 @@ def extract_func(endpoint, api_token, input_url, extractor, request_timeout, pro
                 break
             time.sleep(1)
 
-        # Display extracted content (TODO: needs to be one endpoint)
+        # Display extracted content
         r = requests.get(endpoint + '/extractions/' + file_id + '/metadata', headers=headers_json,
                          timeout=request_timeout)
         r.raise_for_status()

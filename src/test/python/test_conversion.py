@@ -1,12 +1,7 @@
-import requests
 import urllib
-from os.path import basename, splitext, getsize
-import os
+from os.path import basename, getsize
 import os.path
 import pytest
-import time
-import mimetypes
-import tempfile
 from util import *
 
 
@@ -20,6 +15,7 @@ def test_get_convert(host, api_token, request_timeout, processing_timeout, conve
     if 'download' in conversion_data:
         conversion_data['file_path'] = download_file_web(conversion_data['file_url'])
         convert(host, api_token, request_timeout, processing_timeout, conversion_data, convert_by_file, 'file_path')
+
 
 def convert(host, api_token, request_timeout, processing_timeout, conversion_data, convert_func, file_field):
     print "Description     :", conversion_data['description']
@@ -69,5 +65,5 @@ def convert_by_file(endpoint, api_token, input_filename, output, request_timeout
     boundary = 'browndog-fence-header'
     files = [('file', (input_filename, mimetypes.guess_type(input_filename)[0] or 'application/octet-stream'))]
     return requests.post(api_call, headers={'Accept': 'application/json', 'Authorization': api_token,
-                              'Content-Type': 'multipart/form-data; boundary=' + boundary},
-                              data=multipart([], files, boundary, 5 * 1024 * 1024), timeout=request_timeout)
+                         'Content-Type': 'multipart/form-data; boundary=' + boundary},
+                         data=multipart([], files, boundary, 5 * 1024 * 1024), timeout=request_timeout)
