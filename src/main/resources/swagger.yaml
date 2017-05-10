@@ -102,8 +102,6 @@ paths:
         to live is. 
       tags:
         - Authorization
-      security:
-        - login: []
       parameters:
         - name: token
           in: path
@@ -559,7 +557,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /extractions/upload_url:
+  /extractions/url:
     post:
       summary: Uploads a file for extraction using the file's URL
       description: |
@@ -587,7 +585,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /extractions/upload_file:
+  /extractions/file:
     post:
       summary: Uploads a file in the body for extraction of metadata
       description: |
@@ -610,6 +608,28 @@ paths:
       responses:
         '200':
           description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/extractions/files/{file_id}':
+    get:
+      summary: Retrieve basic file information.
+      description: |
+        Retrieve basic file information, including whether the file is ready for submission to extractors.
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File info
           schema:
             type: string
         default:
