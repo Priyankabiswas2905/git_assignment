@@ -171,6 +171,12 @@ object Server extends TwitterServer {
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(path)
 
     // Extraction endpoints
+    case (Get | Options, Root / "extractions" / fileId / "status") =>
+      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractions/" + fileId + "/status"))
+
+    case (Get | Options, Root / "extractions" / "files" / fileId) =>
+      cf andThen tokenFilter andThen quotas andThen Clowder.clowderCatchAll(Path("/api/files/" + fileId + "/metadata"))
+
     case (Post | Options, Root / "extractions" / "files" / fileId) =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files/" + fileId + "/extractions")
 
@@ -180,14 +186,11 @@ object Server extends TwitterServer {
     case (_, Root / "extractions" / "files" / fileId / "metadata.jsonld" ) =>
       cf andThen tokenFilter andThen quotas andThen Clowder.clowderCatchAll(Path("/api/files/" + fileId + "/metadata.jsonld"))
 
-    case (Post, Root / "extractions" / "upload_file") =>
+    case (Post, Root / "extractions" / "file") =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/extractions/upload_file")
 
-    case (Post, Root / "extractions" / "upload_url") =>
+    case (Post, Root / "extractions" / "url") =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractURL("/api/extractions/upload_url")
-
-    case (_, Root / "extractions" / fileId / "status") =>
-      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractions/" + fileId + "/status"))
 
     case (Post, Root / "extractions" / fileId) =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files/" + fileId + "/extractions")
@@ -245,7 +248,7 @@ object Server extends TwitterServer {
       cf andThen options(Get, Delete)
 
     case (Get, Root / "tokens" / token) =>
-      cf andThen userAuth andThen Auth.checkToken(UUID.fromString(token))
+      cf andThen Auth.checkToken(UUID.fromString(token))
 
     case (Delete, Root / "tokens" / token) =>
       cf andThen userAuth andThen Auth.deleteToken(UUID.fromString(token))
