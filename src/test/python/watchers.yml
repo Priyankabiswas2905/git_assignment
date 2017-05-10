@@ -1,5 +1,0 @@
--
-  name: Dev Null
-  address: devnull@ncsa.illinois.edu
-  get_success: true
-  get_failure: true
