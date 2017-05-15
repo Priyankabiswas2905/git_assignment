@@ -225,6 +225,8 @@ object Server extends TwitterServer {
     case (_, Root / "dw" / "provenance") =>
       cf andThen tokenFilter andThen Datawolf.datawolfPath("/browndog/provenance")
 
+    case (_, "dw" /: path) => cf andThen tokenFilter andThen Datawolf.datawolfCatchAll(path)
+
     // Keys and Tokens
     case (Options, Root / "keys") =>
       cf andThen options(Post)
