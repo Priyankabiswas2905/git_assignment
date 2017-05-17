@@ -32,3 +32,18 @@ Admin console endpoints
 - http://localhost:9990/admin/metrics.json?pretty=true
 
 
+Docker
+------
+You can run fence in a docker container and provide your own application.conf at run time:
+```$xslt
+docker run --rm \
+    --volume /path/application.conf:/home/fence/application.conf \
+    --link redis:redis \
+    --link mongodb:mongodb \
+    --name fence \
+    --publish 8080:8080 \
+    --publish 9990:9990 \
+    browndog/fence
+```
+
+
