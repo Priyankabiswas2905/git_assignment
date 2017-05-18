@@ -12,10 +12,10 @@ info:
     name: University of Illinois/NCSA Open Source License
     url: 'https://opensource.org/licenses/NCSA'
   version: 0.1.0
-host: 'localhost:8080'
-basePath: /
+host: 'bd-api-dev.ncsa.illinois.edu'
+basePath: '/v1'
 schemes:
-  - http
+  - https
 produces:
   - application/json
 securityDefinitions:
