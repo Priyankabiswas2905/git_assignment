@@ -148,6 +148,9 @@ object Server extends TwitterServer {
     case (Get, Root / "polyglot" / "alive") =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("alive"))
 
+    case (Get | Options, Root / "conversions" / "path" / output / input) =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/path/" + output + "/" + input))
+
     case (Get | Options, Root / "conversions" / fileType / path) =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.convertURL(fileType, path)
 
