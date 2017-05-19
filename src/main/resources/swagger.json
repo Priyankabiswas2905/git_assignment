@@ -33,6 +33,11 @@
       "type": "basic"
     }
   },
+  "security": [
+    {
+      "token": []
+    }
+  ],
   "paths": {
     "/keys": {
       "post": {
@@ -435,6 +440,11 @@
               "type": "string",
               "format": "binary"
             }
+          }
+        ],
+        "security": [
+          {
+            "token": []
           }
         ],
         "tags": [
@@ -907,6 +917,11 @@
             "type": "string"
           }
         ],
+        "security": [
+          {
+            "token": []
+          }
+        ],
         "tags": [
           "Extractions"
         ],
@@ -937,6 +952,11 @@
             "description": "File id returned from original file submission for extraction",
             "required": true,
             "type": "string"
+          }
+        ],
+        "security": [
+          {
+            "token": []
           }
         ],
         "tags": [
@@ -972,6 +992,11 @@
             "description": "File id returned from original file submission for extraction",
             "required": true,
             "type": "string"
+          }
+        ],
+        "security": [
+          {
+            "token": []
           }
         ],
         "tags": [
@@ -1195,6 +1220,15 @@
         "description": "List all extractors that would be executed for the given file type specified in the parameters, e.g. ?filey_type-image/jpeg\n",
         "tags": [
           "Extractions"
+        ],
+        "parameters": [
+          {
+            "name": "file_type",
+            "in": "query",
+            "description": "File type, for example image/jpeg",
+            "required": true,
+            "type": "string"
+          }
         ],
         "responses": {
           "200": {

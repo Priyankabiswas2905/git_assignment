@@ -12,8 +12,8 @@ info:
     name: University of Illinois/NCSA Open Source License
     url: 'https://opensource.org/licenses/NCSA'
   version: 0.1.0
-host: 'bd-api-dev.ncsa.illinois.edu'
-basePath: '/v1'
+host: bd-api-dev.ncsa.illinois.edu
+basePath: /v1
 schemes:
   - https
 produces:
@@ -25,6 +25,8 @@ securityDefinitions:
     name: Authorization
   login:
     type: basic
+security:
+  - token: []
 paths:
   /keys:
     post:
@@ -142,7 +144,7 @@ paths:
   /events/latest:
     get:
       summary: Get latest n events
-      description: >
+      description: |
         Get latest n events, where n is specified as a query parameter.
       tags:
         - Events
@@ -297,6 +299,8 @@ paths:
           schema:
             type: string
             format: binary
+      security:
+        - token: []
       tags:
         - Conversions
       responses:
@@ -331,8 +335,8 @@ paths:
         - name: application
           in: query
           description: >
-            Specific software application to use for this conversion. For example
-            PEcAn.
+            Specific software application to use for this conversion. For
+            example PEcAn.
           required: false
           type: string
       tags:
@@ -467,8 +471,8 @@ paths:
         - name: application
           in: query
           description: >
-            Specific software application to use for this conversion. For example
-            PEcAn.
+            Specific software application to use for this conversion. For
+            example PEcAn.
           required: false
           type: string
       tags:
@@ -617,14 +621,17 @@ paths:
   '/extractions/files/{file_id}':
     get:
       summary: Retrieve basic file information.
-      description: |
-        Retrieve basic file information, including whether the file is ready for submission to extractors.
+      description: >
+        Retrieve basic file information, including whether the file is ready for
+        submission to extractors.
       parameters:
         - name: file_id
           in: path
           description: File id returned from original file submission for extraction
           required: true
           type: string
+      security:
+        - token: []
       tags:
         - Extractions
       responses:
@@ -647,6 +654,8 @@ paths:
           description: File id returned from original file submission for extraction
           required: true
           type: string
+      security:
+        - token: []
       tags:
         - Extractions
       responses:
@@ -671,6 +680,8 @@ paths:
           description: File id returned from original file submission for extraction
           required: true
           type: string
+      security:
+        - token: []
       tags:
         - Extractions
       responses:
@@ -825,6 +836,12 @@ paths:
         specified in the parameters, e.g. ?filey_type-image/jpeg
       tags:
         - Extractions
+      parameters:
+        - name: file_type
+          in: query
+          description: 'File type, for example image/jpeg'
+          required: true
+          type: string
       responses:
         '200':
           description: A list of extractors
