@@ -14,6 +14,7 @@ import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Quotas.{RateLimitFilter, RequestsQuotasFilter}
+import edu.illinois.ncsa.fence.auth.AdminAuthFilter
 import edu.illinois.ncsa.fence.db.Mongodb
 import edu.illinois.ncsa.fence.util.GatewayHeaders.GatewayHostHeaderFilter
 import edu.illinois.ncsa.fence.util._
@@ -115,6 +116,9 @@ object Server extends TwitterServer {
   /** Filter to handle exceptions. Currently not used. **/
   val handleExceptions = new HandleExceptions
 
+  /** Filter to let only users who are in the admin list **/
+  val admin = new AdminAuthFilter
+
   /** Filter to handle user quotas */
   val checkQuotas = new RequestsQuotasFilter
 
@@ -133,7 +137,7 @@ object Server extends TwitterServer {
   /** Application router **/
   val router = RoutingService.byMethodAndPathObject[Request] {
 
-    case (Get, Root / "ok") => ok
+    case (Get, Root / "ok") => tokenFilter andThen admin andThen ok
 
     case (Get, Root) =>
       redirect(conf.getString("docs.root"))
@@ -263,19 +267,19 @@ object Server extends TwitterServer {
 
     // Events and Stats
     case (Options, Root / "events" / "latest") =>
-      cf andThen options(Get)
+      cf andThen tokenFilter andThen admin andThen options(Get)
 
     case (Get, Root / "events" / "latest") =>
-      cf andThen tokenFilter andThen Events.latestEvents()
+      cf andThen tokenFilter andThen admin andThen Events.latestEvents()
 
     case (Get, Root / "events" / eventId) =>
-      cf andThen tokenFilter andThen Events.event(eventId)
+      cf andThen tokenFilter andThen admin andThen Events.event(eventId)
 
     case (Get, Root / "events") =>
-      cf andThen tokenFilter andThen Events.events()
+      cf andThen tokenFilter andThen admin andThen Events.events()
 
     case (Get, Root / "stats") =>
-      cf andThen Events.stats()
+      cf andThen tokenFilter andThen admin andThen Events.stats()
 
     case _ => notFound
   }
