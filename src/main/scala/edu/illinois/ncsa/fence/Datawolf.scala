@@ -10,6 +10,8 @@ import edu.illinois.ncsa.fence.Server.log
 import edu.illinois.ncsa.fence.util.Services
 
 import scala.util.parsing.json.{JSON, JSONObject}
+import edu.illinois.ncsa.fence.util.GatewayHeaders
+import com.twitter.finagle.http.path.Path
 
 /**
   * Services to interact with Datawolf. Datawolf is a scientific workflow management system. For more information see
@@ -18,7 +20,7 @@ import scala.util.parsing.json.{JSON, JSONObject}
 object Datawolf {
 
   // Datawolf backend service
-  val dw = Services.getService("dw")
+  val datawolf = Services.getService("dw")
 
   /** Load configuration file using typesafehub config */
   private val conf = ConfigFactory.load()
@@ -44,7 +46,36 @@ object Datawolf {
       newReq.setContentString(body)
       newReq.headerMap.set(Fields.ContentLength, body.toString.length.toString)
       newReq.headerMap.set(Fields.Host, Services.getServiceHost("dw") + Services.getServiceContextPath("dw"))
-      val rep = dw(newReq)
+      newReq.headerMap.set(GatewayHeaders.usernameHeader, conf.getString("dw.user"))
+      newReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dw"))
+      val rep = datawolf(newReq)
+      rep.flatMap { r =>
+        r.headerMap.remove(Fields.AccessControlAllowOrigin)
+        r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        Future.value(r)
+      }
+      rep
+    }
+  }
+  
+  /**
+   * Forward any request on DataWolf.
+   * @param path path to forward to DataWolf
+   */
+  def datawolfCatchAll(path: Path) = new Service[Request, Response] {
+    def apply(req: Request): Future[Response] = {
+      log.debug("[Endpoint] DataWolf catch all")
+      val newPathWithParameters = Services.getServiceContextPath("dw") + path + Server.getURIParams(req)
+      val dwReq = Request(req.method, newPathWithParameters)
+      req.headerMap.keys.foreach { key =>
+        req.headerMap.get(key).foreach { value =>
+          log.trace(s"Headers: $key -> $value")
+          dwReq.headerMap.add(key, value)
+        }
+      }
+      dwReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dw"))
+      log.debug("DataWolf " + req)
+      val rep = datawolf(dwReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
