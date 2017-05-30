@@ -75,8 +75,10 @@ object Polyglot {
       }
       newReq.headerMap.set(Fields.Host, Services.getServiceHost("dap"))
       newReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dap"))
+      newReq.headerMap.set(Fields.Accept, "text/plain")
       val rep = polyglot(newReq)
       rep.flatMap { r =>
+        log.debug("Uploaded bytes for conversion " +  req.getLength())
         val hostname = conf.getString("fence.hostname")
         val dapURL = conf.getString("dap.url")
         if (r.contentString.contains(dapURL)) {
@@ -88,16 +90,23 @@ object Polyglot {
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
         r.headerMap.remove("Access-control-allow-credential")
+        // log events
+        val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
+        val logKey = "conversions"
+        val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+        // extract file name
+        val pattern = ((hostname + "/dap/file/").replace("/","\\/") + "(.+)").r
+        r.contentString match {
+          case pattern(file) =>
+            Mongodb.addEvent("conversion", "urn:bdid:" + file, username, clientIP)
+          case _ =>
+            log.error("Error parsing file name " + r.contentString)
+            Mongodb.addEvent("conversion", "error parsing file name", username, clientIP)
+        }
+        Redis.increaseStat(logKey)
+        Redis.logBytes(logKey, req.getLength())
         Future.value(r)
       }
-      log.debug("Uploaded bytes for conversion " +  req.getLength())
-      // log events
-      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
-      val logKey = "conversions"
-      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-      Mongodb.addEvent("conversion", "file:///", username, clientIP)
-      Redis.increaseStat(logKey)
-      Redis.logBytes(logKey, req.getLength())
       rep
     }
   }
