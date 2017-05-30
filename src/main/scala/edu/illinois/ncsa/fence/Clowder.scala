@@ -9,6 +9,7 @@ import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http._
 import com.twitter.finagle.http.path.Path
 import com.twitter.util.Future
+import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server.{log, statsReceiver}
 import edu.illinois.ncsa.fence.db.Mongodb
 import edu.illinois.ncsa.fence.util.{ExternalResources, GatewayHeaders, Services}
@@ -29,6 +30,13 @@ object Clowder {
 
   // Finagle stats counter
   val clowderStats = statsReceiver.counter("clowder-requests")
+
+  // Jackson JSON parsing
+  val mapper = new ObjectMapper() with ScalaObjectMapper
+  mapper.registerModule(DefaultScalaModule)
+
+  /** Load configuration file using typesafehub config */
+  private val conf = ConfigFactory.load()
 
   /**
     * Forward any request on to Clowder.
@@ -79,16 +87,18 @@ object Clowder {
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        log.debug("Uploaded bytes for extraction " +  req.getLength())
+        // log stats and events
+        val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
+        val logKey = "extractions"
+        val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+        val json = mapper.readTree(r.getContentString())
+        val id = json.findValue("id").asText()
+        Mongodb.addEvent("extraction", "urn:bdid:" + id, username, clientIP)
+        Redis.logBytes(logKey, req.getLength())
+        Redis.increaseStat(logKey)
         Future.value(r)
       }
-      log.debug("Uploaded bytes for extraction " +  req.getLength())
-      // log stats and events
-      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
-      val logKey = "extractions"
-      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-      Mongodb.addEvent("extraction", "file:///", username, clientIP)
-      Redis.logBytes(logKey, req.getLength())
-      Redis.increaseStat(logKey)
       rep
     }
   }
@@ -167,8 +177,6 @@ object Clowder {
     * @return file url
     */
   private def extractFileURL(req: Request): String = {
-    val mapper = new ObjectMapper() with ScalaObjectMapper
-    mapper.registerModule(DefaultScalaModule)
     val json = mapper.readTree(req.getContentString())
     val fileurl = json.findValue("fileurl").asText()
     log.debug("Extracted fileurl from body of request: " + fileurl)
