@@ -26,11 +26,13 @@ fi
 
 ${DEBUG} mkdir -p docker/files
 ${DEBUG} cp entrypoint.sh docker/files
-${DEBUG} cp src/main/resources/application.conf docker/files
+${DEBUG} cp src/main/resources/docker.conf docker/files/application.conf
 ${DEBUG} cp target/scala-2.11/$( basename ${JARFILE} ) docker/files/
 
 ${DEBUG} docker build -t $PROJECT/fence docker
-docker push $PROJECT/fence:latest
+if [ "$PUSH" = "PUSH" ]; then
+  ${DEBUG} docker push $PROJECT/fence:latest
+fi
 
 #Cleanup
 rm -rf docker/files
