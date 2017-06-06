@@ -92,9 +92,8 @@ object Clowder {
         val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
         val logKey = "extractions"
         val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-        val json = mapper.readTree(r.getContentString())
-        val id = json.findValue("id").asText()
-        Mongodb.addEvent("extraction", "urn:bdid:" + id, username, clientIP)
+        val id = extractId(r)
+        Mongodb.addEvent("extraction", "urn:bdid:" + id, username, clientIP, id)
         Redis.logBytes(logKey, req.getLength())
         Redis.increaseStat(logKey)
         Future.value(r)
@@ -120,22 +119,24 @@ object Clowder {
       }
       newReq.headerMap.set(Fields.Host, Services.getServiceHost("dts"))
       newReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dts"))
+      newReq.headerMap.set(Fields.ContentType, "application/json")
       val rep = clowder(newReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
+        log.debug(s"Uploaded $req.getLength() bytes for extraction ")
+        // log stats and events
+        val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
+        val logKey = "extractions"
+        val fileurl = Clowder.extractFileURL(req)
+        ExternalResources.contentLengthFromHead(fileurl, logKey)
+        val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+        val id = extractId(r)
+        Mongodb.addEvent("extraction", fileurl, username, clientIP, id)
+        Redis.logBytes(logKey, req.getLength())
+        Redis.increaseStat(logKey)
         Future.value(r)
       }
-      log.debug(s"Uploaded $req.getLength() bytes for extraction ")
-      // log stats and events
-      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
-      val logKey = "extractions"
-      val fileurl = Clowder.extractFileURL(req)
-      ExternalResources.contentLengthFromHead(fileurl, logKey)
-      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-      Mongodb.addEvent("extraction", fileurl, username, clientIP)
-      Redis.logBytes(logKey, req.getLength())
-      Redis.increaseStat(logKey)
       rep
     }
   }
@@ -171,6 +172,11 @@ object Clowder {
     }
   }
 
+  private def extractId(res: Response): String = {
+    val json = mapper.readTree(res.getContentString())
+    json.findValue("id").asText()
+  }
+
   /**
     * Extract file url from the body of the request.
     * @param req request
@@ -188,7 +194,7 @@ object Clowder {
     * @param param missing query parameter
     * @return a Bad Request response with message
     */
-  def missingParam(param: String): Response = {
+  private def missingParam(param: String): Response = {
     val error = Response(Version.Http11, Status.BadRequest)
     error.setContentTypeJson()
     error.setContentString(s"""{"status":"error", "message":"Parameter '$param' required"}""")

@@ -14,7 +14,7 @@ import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Auth.TokenFilter
 import edu.illinois.ncsa.fence.Quotas.{RateLimitFilter, RequestsQuotasFilter}
-import edu.illinois.ncsa.fence.auth.AdminAuthFilter
+import edu.illinois.ncsa.fence.auth.{AdminAuthFilter, ResourceAuthFilter}
 import edu.illinois.ncsa.fence.db.Mongodb
 import edu.illinois.ncsa.fence.util.GatewayHeaders.GatewayHostHeaderFilter
 import edu.illinois.ncsa.fence.util._
@@ -137,7 +137,7 @@ object Server extends TwitterServer {
   /** Application router **/
   val router = RoutingService.byMethodAndPathObject[Request] {
 
-    case (Get, Root / "ok") => tokenFilter andThen admin andThen ok
+    case (Get, Root / "ok") => ok
 
     case (Get, Root) =>
       redirect(conf.getString("docs.root"))
@@ -151,6 +151,10 @@ object Server extends TwitterServer {
     // Conversion endpoints
     case (Get, Root / "polyglot" / "alive") =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("alive"))
+
+    case (Get | Options, Root / "conversions" / "file" / fileId) =>
+      cf andThen tokenFilter andThen rateLimit andThen new ResourceAuthFilter(fileId) andThen
+        Polyglot.polyglotCatchAll(Path("/file/" + fileId))
 
     case (Get | Options, Root / "conversions" / "path" / output / input) =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/path/" + output + "/" + input))
@@ -168,6 +172,9 @@ object Server extends TwitterServer {
     case (Get, Root / "dap" / "alive") =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("alive"))
 
+    case (Get | Options, Root / "dap" / "file" / fileId) =>
+      cf andThen tokenFilter andThen rateLimit andThen Polyglot.polyglotCatchAll(Path("/file/" + fileId))
+
     case (_, Root / "dap" / "convert" / fileType / path) =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.convertURL(fileType, path)
 
@@ -179,19 +186,24 @@ object Server extends TwitterServer {
 
     // Extraction endpoints
     case (Get | Options, Root / "extractions" / fileId / "status") =>
-      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractions/" + fileId + "/status"))
+      cf andThen tokenFilter andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.clowderCatchAll(Path("/api/extractions/" + fileId + "/status"))
 
     case (Get | Options, Root / "extractions" / "files" / fileId) =>
-      cf andThen tokenFilter andThen quotas andThen Clowder.clowderCatchAll(Path("/api/files/" + fileId + "/metadata"))
+      cf andThen tokenFilter andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.clowderCatchAll(Path("/api/files/" + fileId + "/metadata"))
 
     case (Post | Options, Root / "extractions" / "files" / fileId) =>
-      cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files/" + fileId + "/extractions")
+      cf andThen tokenFilter andThen quotas andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.extractBytes("/api/files/" + fileId + "/extractions")
 
     case (Delete, Root / "extractions" / "files" / fileId) =>
-      cf andThen tokenFilter andThen quotas andThen Clowder.clowderCatchAll(Path("/api/files/" + fileId))
+      cf andThen tokenFilter andThen quotas andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.clowderCatchAll(Path("/api/files/" + fileId))
 
     case (_, Root / "extractions" / "files" / fileId / "metadata.jsonld" ) =>
-      cf andThen tokenFilter andThen quotas andThen Clowder.clowderCatchAll(Path("/api/files/" + fileId + "/metadata.jsonld"))
+      cf andThen tokenFilter andThen quotas andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.clowderCatchAll(Path("/api/files/" + fileId + "/metadata.jsonld"))
 
     case (Post, Root / "extractions" / "file") =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/extractions/upload_file")
@@ -200,7 +212,8 @@ object Server extends TwitterServer {
       cf andThen tokenFilter andThen quotas andThen Clowder.extractURL("/api/extractions/upload_url")
 
     case (Post, Root / "extractions" / fileId) =>
-      cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files/" + fileId + "/extractions")
+      cf andThen tokenFilter andThen quotas andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.extractBytes("/api/files/" + fileId + "/extractions")
 
     case (_, Root / "extractors") =>
       cf andThen tokenFilter andThen Clowder.extractorsInfoPath("/get-extractors-info")
@@ -213,7 +226,8 @@ object Server extends TwitterServer {
       cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files")
 
     case (Post, Root / "dts" / "api" / "files" / fileId / "extractions" ) =>
-      cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/files/" + fileId + "/extractions")
+      cf andThen tokenFilter andThen quotas andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.extractBytes("/api/files/" + fileId + "/extractions")
 
     case (Post, Root / "dts" / "api" / "extractions" / "upload_file") =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractBytes("/api/extractions/upload_file")
