@@ -94,14 +94,14 @@ object Polyglot {
         val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
         val logKey = "conversions"
         val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-        // extract file name
+        // extract file id
         val pattern = ((hostname + "/dap/file/").replace("/","\\/") + "(.+)").r
         r.contentString match {
-          case pattern(file) =>
-            Mongodb.addEvent("conversion", "urn:bdid:" + file, username, clientIP)
+          case pattern(fileId) =>
+            Mongodb.addEvent("conversion", "urn:bdid:" + fileId, username, clientIP, fileId)
           case _ =>
             log.error("Error parsing file name " + r.contentString)
-            Mongodb.addEvent("conversion", "error parsing file name", username, clientIP)
+            Mongodb.addEvent("conversion", "error parsing file name", username, clientIP, "")
         }
         Redis.increaseStat(logKey)
         Redis.logBytes(logKey, req.getLength())
@@ -143,18 +143,25 @@ object Polyglot {
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
         r.headerMap.remove("Access-control-allow-credential")
+        // log stats and events
+        val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
+        val logKey = "conversions"
+        ExternalResources.contentLengthFromHead(url, logKey)
+        val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+        // extract file id
+        val pattern = ((hostname + "/dap/file/").replace("/","\\/") + "(.+)").r
+        r.contentString match {
+          case pattern(fileId) =>
+            Mongodb.addEvent("conversion", "urn:bdid:" + fileId, username, clientIP, fileId)
+          case _ =>
+            log.error("Error parsing file name: " + r.contentString)
+            Mongodb.addEvent("conversion", "Error parsing file name: " + r.contentString, username, clientIP, "")
+        }
+        Redis.logBytes(logKey, req.getLength())
+        Redis.increaseStat(logKey)
         Future.value(r)
       }
-      // log stats and events
-      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
-      val logKey = "conversions"
-      ExternalResources.contentLengthFromHead(url, logKey)
-      val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-      Mongodb.addEvent("conversion", url, username, clientIP)
-      Redis.logBytes(logKey, req.getLength())
-      Redis.increaseStat(logKey)
       rep
     }
   }
-
 }

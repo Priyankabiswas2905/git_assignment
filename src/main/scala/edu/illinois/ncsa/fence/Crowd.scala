@@ -26,8 +26,6 @@ object Crowd {
         case Some(header) =>
           val credentials = new String(Base64StringEncoder.decode(header.substring(6))).split(":")
           if (credentials.size == 2) {
-//            val session = Await.result(callSessionEndpoint(credentials(0), credentials(1)))
-
             callSessionEndpoint(credentials(0), credentials(1)).flatMap {
               case r: Response => {
                 if (r.status == Status.Ok) {

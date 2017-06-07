@@ -172,6 +172,7 @@ object Redis {
     * @param user id of the account making the request
     * @param clientIP client IP
     */
+  @deprecated("Now stored in Mongodb. See db.Mongodb.", "0.2.0")
   def storeEvent(eventType: String, resource: String, user: String, clientIP: String): Unit = {
     val millis = System.currentTimeMillis()
     val calendar = Calendar.getInstance()
@@ -311,6 +312,7 @@ object Redis {
     *
     * @return a list of Events instances
     */
+  @deprecated("Now stored in Mongodb. See db.Mongodb.", "0.2.0")
   def getEvents(since: Option[String], until: Option[String], limit: Long): Future[Seq[Map[String, String]]] = {
     val start = if (since.isEmpty) ZInterval("-inf") else ZInterval(since.get)
     val end = if (until.isEmpty) ZInterval("+inf") else ZInterval(until.get)
@@ -331,6 +333,7 @@ object Redis {
     * @param eventId
     * @return the event as a Future of a Map of Strings
     */
+  @deprecated("Now stored in Mongodb. See db.Mongodb.", "0.2.0")
   def getEvent(eventId: String): Future[Map[String, String]] = {
     val id = StringToChannelBuffer(eventNamespace + eventId)
     getEvent(id)
@@ -342,6 +345,7 @@ object Redis {
     * @param eventId
     * @return events as a Future of a Map of Strings
     */
+  @deprecated("Now stored in Mongodb. See db.Mongodb.", "0.2.0")
   private def getEvent(eventId: ChannelBuffer): Future[Map[String, String]] = {
     redis.hGetAll(eventId).flatMap { hash =>
       val map: Map[String, String] = hash.map(t => CBToString(t._1) -> CBToString(t._2))(collection.breakOut)

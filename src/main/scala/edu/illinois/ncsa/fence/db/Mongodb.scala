@@ -46,6 +46,8 @@ object Mongodb {
     val logResult = (s: Seq[String]) => log.info(s"Creted index ${s.head}")
     events.createIndex(ascending("user")).toFuture().map(logResult)
     events.createIndex(descending("date")).toFuture().map(logResult)
+    events.createIndex(ascending("resource")).toFuture().map(logResult)
+    events.createIndex(ascending("resource_id")).toFuture().map(logResult)
   }
 
   /**
@@ -92,14 +94,16 @@ object Mongodb {
   /**
     * Store a new event.
     * @param eventType a string representing a type, currently "extraction" or "conversion"
-    * @param resource a string representing the file, either as a path or a url
+    * @param resource a string representing the file, either as a URN or a URL
     * @param user id of the user submitting the job
     * @param clientIP client IP from which the submission originated
+    * @param resource_id the id of the resource assigned by the backend service
     * @return future status of submission
     */
-  def addEvent(eventType: String, resource: String, user: String, clientIP: String): Future[Option[Completed]] = {
+  def addEvent(eventType: String, resource: String, user: String, clientIP: String, resource_id: String):
+  Future[Option[Completed]] = {
     val now = ZonedDateTime.now()
-    val event = Event(clientIP, now, resource, eventType, user)
+    val event = Event(clientIP, now, resource, eventType, user, resource_id)
     val insertObservable: Observable[Completed] = events.insertOne(eventToDocument(event))
 
     insertObservable.toFuture()
@@ -136,6 +140,17 @@ object Mongodb {
   }
 
   /**
+    * Get events by resource id. This could return multiple events in the case of the same url submitted.
+    * @param resource the external URL or internal URN of the file
+    * @return list of events (could be from multiple users in the case of the same RUL
+    */
+  def getEventsByResource(resource: String): Future[Seq[Event]] = {
+    events.find(equal("resource_id", resource)).sort(descending("date")).toFuture()
+      .recoverWith { case e: Throwable => { log.error(s"Get events by resource ${resource}", e); Future.failed(e) } }
+      .map(seq => seq.map(d => documentToEvent(d)))
+  }
+
+  /**
     * Convert instance of Event to instance of BSON Document.
     * @param event an event
     * @return a BSON document
@@ -145,7 +160,8 @@ object Mongodb {
       "date" -> BsonDateTime(event.date.toInstant.getEpochSecond * 1000),
       "resource" -> event.resource,
       "eventType" -> event.eventType,
-      "user" -> event.user)
+      "user" -> event.user,
+      "resource_id" -> event.resource_id)
   }
 
   /**
@@ -159,7 +175,8 @@ object Mongodb {
     val resource = document.getString("resource")
     val eventType = document.getString("eventType")
     val user = document.getString("user")
-    Event(clientIP, date, resource, eventType, user)
+    val resource_id = document.getString("resource_id")
+    Event(clientIP, date, resource, eventType, user, resource_id)
   }
 
 }
