@@ -12,11 +12,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Track user quotas using total counts.
 - Rate limiting using buckets.
 - Endpoint to get latest n events.
+- Missing endpoints using new prefixes (/conversions and /extractions).
 
 ### Fixed
 - HTTP OPTIONS was not supported for some endpoint. CORS would not work.
 - Encode username for Crowd authentication provider.
 - Forward client IP using X-Real-IP for logging events when behind proxy (nginx).
+- Updated swagger definitions.
 
 ## 0.0.1 - 2016-12-01
 ### Added
