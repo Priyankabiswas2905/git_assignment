@@ -152,6 +152,10 @@ object Server extends TwitterServer {
     case (Get, Root / "polyglot" / "alive") =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("alive"))
 
+    // TODO return JSON
+    case (_, Root / "conversions" / "outputs" ) =>
+      cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("/outputs"))
+
     case (Get | Options, Root / "conversions" / "file" / fileId) =>
       cf andThen tokenFilter andThen rateLimit andThen new ResourceAuthFilter(fileId) andThen
         Polyglot.polyglotCatchAll(Path("/file/" + fileId))

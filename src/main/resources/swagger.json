@@ -2,18 +2,18 @@
   "swagger": "2.0",
   "info": {
     "title": "Brown Dog API",
-    "description": "Documentation for the [Brown Dog](http://browndog.ncsa.illinois.edu/) API",
+    "description": "Documentation for the [Brown Dog](http://browndog.ncsa.illinois.edu/) API.",
     "termsOfService": "http://browndog.ncsa.illinois.edu",
     "contact": {
       "name": "Brown Dog Support",
       "url": "https://opensource.ncsa.illinois.edu/confluence/questions/topics/41156618/brown-dog",
-      "email": "sbrad77@illinois.edu"
+      "email": "browndog-support@ncsa.illinois.edu"
     },
     "license": {
       "name": "University of Illinois/NCSA Open Source License",
       "url": "https://opensource.org/licenses/NCSA"
     },
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "host": "bd-api-dev.ncsa.illinois.edu",
   "basePath": "/v1",
@@ -24,10 +24,17 @@
     "application/json"
   ],
   "securityDefinitions": {
-    "token": {
+    "TokenHeader": {
       "type": "apiKey",
       "in": "header",
-      "name": "Authorization"
+      "name": "Authorization",
+      "description": "Access token can be provided in the header or as a query parameter.\n"
+    },
+    "TokenQueryParam": {
+      "type": "apiKey",
+      "in": "query",
+      "name": "token",
+      "description": "Access token can be provided in the header or as a query parameter.\n"
     },
     "login": {
       "type": "basic"
@@ -35,14 +42,17 @@
   },
   "security": [
     {
-      "token": []
+      "TokenHeader": []
+    },
+    {
+      "TokenQueryParam": []
     }
   ],
   "paths": {
     "/keys": {
       "post": {
-        "summary": "Create a new api key",
-        "description": "Create a new api key",
+        "summary": "Create a new api key.",
+        "description": "Create a new API key. Keys never expire and have to manually be deleted. This method requires a valid Brown Dog username/password. You can request one [here](https://browndog.ncsa.illinois.edu/signup/). Once you a have key you can keep reusing it to create access tokens. Access tokens are required for most endpoints.",
         "tags": [
           "Authorization"
         ],
@@ -53,13 +63,19 @@
         ],
         "responses": {
           "200": {
-            "description": "Newly created api key",
+            "description": "Newly created api key.",
             "schema": {
               "$ref": "#/definitions/APIKey"
             }
           },
+          "403": {
+            "description": "Invalid credentials.",
+            "schema": {
+              "$ref": "#/definitions/InvalidCredentials"
+            }
+          },
           "default": {
-            "description": "Unexpected error",
+            "description": "Unexpected error.",
             "schema": {
               "$ref": "#/definitions/Error"
             }
@@ -69,8 +85,8 @@
     },
     "/keys/{key}/tokens": {
       "post": {
-        "summary": "Create a new access token from api key",
-        "description": "Most endpoints require a token. API keys are unique and never expire. \nUsers, however, can create as many tokens as they want which are in turn associated with their key. \nTokens expire after 24 hours. After that a new token will have to be created.\n",
+        "summary": "Create a new access token from an API key.",
+        "description": "Most endpoints require an access token. API keys are unique and never expire. A client can create as many access tokens as they need for each  key. Tokens expire after 24 hours. After that a new token will have to  be created. Each token is bound to the key used to created it.",
         "tags": [
           "Authorization"
         ],
@@ -85,7 +101,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Newly created token",
+            "description": "Newly created token.",
             "schema": {
               "$ref": "#/definitions/Token"
             }
@@ -101,8 +117,8 @@
     },
     "/keys/{key}": {
       "delete": {
-        "summary": "Delete api key and all related access tokens",
-        "description": "Delete api key and all related access tokens",
+        "summary": "Delete api key and all related access tokens.",
+        "description": "Delete api key and all related access tokens.",
         "tags": [
           "Authorization"
         ],
@@ -122,9 +138,15 @@
         ],
         "responses": {
           "200": {
-            "description": "Whether the operation was successful or not",
+            "description": "Whether the operation was successful or not.",
             "schema": {
-              "$ref": "#/definitions/Status"
+              "$ref": "#/definitions/Success"
+            }
+          },
+          "403": {
+            "description": "Invalid credentials.",
+            "schema": {
+              "$ref": "#/definitions/InvalidCredentials"
             }
           },
           "default": {
@@ -138,8 +160,8 @@
     },
     "/tokens/{token}": {
       "get": {
-        "summary": "Get info about token",
-        "description": "Retrieves whether the token is still alive and what the remaining time to live is. \n",
+        "summary": "Get info about token.",
+        "description": "Retrieves whether the token is still alive and what the remaining time to live is.",
         "tags": [
           "Authorization"
         ],
@@ -147,14 +169,14 @@
           {
             "name": "token",
             "in": "path",
-            "description": "Access token",
+            "description": "Access token.",
             "required": true,
             "type": "string"
           }
         ],
         "responses": {
           "200": {
-            "description": "Newly created token",
+            "description": "Newly created token.",
             "schema": {
               "$ref": "#/definitions/TokenInfo"
             }
@@ -168,8 +190,8 @@
         }
       },
       "delete": {
-        "summary": "Delete token",
-        "description": "Delete token",
+        "summary": "Delete token.",
+        "description": "Delete token. If not deleted a token will auto expire after 24 hours.",
         "tags": [
           "Authorization"
         ],
@@ -182,16 +204,22 @@
           {
             "name": "token",
             "in": "path",
-            "description": "Access token",
+            "description": "Access token.",
             "required": true,
             "type": "string"
           }
         ],
         "responses": {
           "200": {
-            "description": "Whether the operation was successful or not",
+            "description": "Whether the operation was successful or not.",
             "schema": {
-              "$ref": "#/definitions/Status"
+              "$ref": "#/definitions/Success"
+            }
+          },
+          "403": {
+            "description": "Invalid credentials.",
+            "schema": {
+              "$ref": "#/definitions/InvalidCredentials"
             }
           },
           "default": {
@@ -205,14 +233,17 @@
     },
     "/events/latest": {
       "get": {
-        "summary": "Get latest n events",
-        "description": "Get latest n events, where n is specified as a query parameter.\n",
+        "summary": "Get latest n events.",
+        "description": "Get latest n events, where n is specified as a query parameter.",
         "tags": [
           "Events"
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "parameters": [
@@ -220,7 +251,7 @@
             "name": "limit",
             "in": "query",
             "description": "How many events to show",
-            "required": true,
+            "required": false,
             "type": "integer"
           }
         ],
@@ -234,6 +265,12 @@
               }
             }
           },
+          "401": {
+            "$ref": "#/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/responses/TooManyRequestsError"
+          },
           "default": {
             "description": "Unexpected error",
             "schema": {
@@ -245,24 +282,27 @@
     },
     "/conversions/outputs": {
       "get": {
-        "summary": "List all output formats that can be reached",
-        "description": "List all output formats that can be reached\n",
+        "summary": "List available conversion output formats.",
+        "description": "List all output formats that can be reached.",
         "tags": [
           "Conversions"
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
+        ],
+        "produces": [
+          "text/plain"
         ],
         "responses": {
           "200": {
-            "description": "An array of available output file formats",
+            "description": "An list of available output file formats as plain text with new lines delimiters.",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "type": "string"
             }
           },
           "default": {
@@ -276,24 +316,27 @@
     },
     "/conversions/inputs": {
       "get": {
-        "summary": "List all input formats that can be accepted. Limit the number of hops allowed by setting chain parameter, e.g. ?chain=2",
+        "summary": "List all supported input formats.",
         "description": "List all input formats that can be accepted. Limit the number of hops allowed by setting chain parameter, e.g. ?chain=2",
         "tags": [
           "Conversions"
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
+        ],
+        "produces": [
+          "text/html"
         ],
         "responses": {
           "200": {
             "description": "An array of available input file formats",
             "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
+              "type": "string"
             }
           },
           "default": {
@@ -323,7 +366,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "responses": {
@@ -354,7 +400,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "responses": {
@@ -385,7 +434,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "parameters": [
@@ -444,7 +496,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -475,7 +530,10 @@
         "description": "Convert the specified file to the requested output format\n",
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "parameters": [
@@ -526,7 +584,10 @@
         "description": "Return the conversion path that would be used for this conversion\n",
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "parameters": [
@@ -837,7 +898,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -882,7 +946,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -919,7 +986,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -956,7 +1026,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -996,7 +1069,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -1114,7 +1190,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -1321,7 +1400,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "responses": {
@@ -1353,7 +1435,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "responses": {
@@ -1394,7 +1479,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "responses": {
@@ -1426,7 +1514,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "responses": {
@@ -1458,7 +1549,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "parameters": [
@@ -1545,7 +1639,10 @@
         "description": "Convert the specified file to the requested output format\n",
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "parameters": [
@@ -1590,7 +1687,10 @@
         "description": "Return the conversion path that would be used for this conversion\n",
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "parameters": [
@@ -1902,7 +2002,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -1948,7 +2051,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -2043,7 +2149,7 @@
       "get": {
         "deprecated": true,
         "summary": "Gets tags associated with the file",
-        "description": "Gets tags associated with the file\n",
+        "description": "Gets tags associated with the file.",
         "parameters": [
           {
             "name": "file_id",
@@ -2075,13 +2181,13 @@
     "/dts/api/files/{file_id}/versusmetadata": {
       "get": {
         "deprecated": true,
-        "summary": "Get Versus metadata associated with the file",
-        "description": "Get Versus metadata associated with the file\n",
+        "summary": "Get Versus metadata associated with the file.",
+        "description": "Get Versus metadata associated with the file.",
         "parameters": [
           {
             "name": "file_id",
             "in": "path",
-            "description": "File id returned from original file submission for extraction",
+            "description": "File id returned from original file submission for extraction.",
             "required": true,
             "type": "string"
           }
@@ -2111,8 +2217,8 @@
     "/dts/api/files/{file_id}/extractions": {
       "post": {
         "deprecated": true,
-        "summary": "Uploads a file in the body for extraction of metadata",
-        "description": "Uploads a file for extraction using the file's URL\n",
+        "summary": "Uploads a file in the body for extraction of metadata.",
+        "description": "Uploads a file for extraction using the file's URL.",
         "consumes": [
           "application/json"
         ],
@@ -2123,7 +2229,7 @@
           {
             "name": "file_id",
             "in": "path",
-            "description": "File id returned from original file submission for extraction",
+            "description": "File id returned from original file submission for extraction.",
             "required": true,
             "type": "string"
           },
@@ -2138,7 +2244,10 @@
         ],
         "security": [
           {
-            "token": []
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
           }
         ],
         "tags": [
@@ -2163,14 +2272,14 @@
     "/dts/api/extractors": {
       "get": {
         "deprecated": true,
-        "summary": "Lists the past and present registered extractors",
-        "description": "Lists the past and present registered extractors\n",
+        "summary": "Lists the past and present registered extractors.",
+        "description": "Lists the past and present registered extractors.",
         "tags": [
           "Extractions"
         ],
         "responses": {
           "200": {
-            "description": "An array of extractor ids",
+            "description": "An array of extractor ids.",
             "schema": {
               "type": "array",
               "items": {
@@ -2190,14 +2299,14 @@
     "/dts/api/extractions/extractors_names": {
       "get": {
         "deprecated": true,
-        "summary": "Lists the currently running extractors",
-        "description": "Lists the currently running extractors\n",
+        "summary": "Lists the currently running extractors.",
+        "description": "Lists the currently running extractors.",
         "tags": [
           "Extractions"
         ],
         "responses": {
           "200": {
-            "description": "An array of extractor ids",
+            "description": "An array of extractor ids.",
             "schema": {
               "type": "array",
               "items": {
@@ -2217,14 +2326,14 @@
     "/dts/api/extractions/extractors_details": {
       "get": {
         "deprecated": true,
-        "summary": "Lists the details of the currently running extractors",
-        "description": "Lists the details of the currently running extractors\n",
+        "summary": "Lists the details of the currently running extractors.",
+        "description": "Lists the details of the currently running extractors.",
         "tags": [
           "Extractions"
         ],
         "responses": {
           "200": {
-            "description": "An array of extractor details",
+            "description": "An array of extractor details.",
             "schema": {
               "type": "array",
               "items": {
@@ -2244,8 +2353,8 @@
     "/dts/api/extractions/servers_ips": {
       "get": {
         "deprecated": true,
-        "summary": "Lists servers hosting running extractors",
-        "description": "Lists servers hosting running extractors\n",
+        "summary": "Lists servers hosting running extractors.",
+        "description": "Lists servers hosting running extractors.",
         "tags": [
           "Extractions"
         ],
@@ -2272,7 +2381,7 @@
       "get": {
         "deprecated": true,
         "summary": "Display an editable workflow for a given transformation",
-        "description": "Display an editable workflow for a given transformation\n",
+        "description": "Display an editable workflow for a given transformation.\n",
         "tags": [
           "Provenance"
         ],
@@ -2306,24 +2415,26 @@
       }
     }
   },
-  "definitions": {
-    "Status": {
-      "type": "object",
-      "properties": {
-        "fileurl": {
-          "type": "string",
-          "description": "Whether the operation was successfull or not"
-        }
-      }
+  "responses": {
+    "UnauthorizedError": {
+      "description": "API access token missing or invalid."
     },
+    "TooManyRequestsError": {
+      "description": "Max number of requests for user depleted."
+    }
+  },
+  "definitions": {
     "FileURL": {
       "type": "object",
       "properties": {
         "fileurl": {
           "type": "string",
-          "description": "URL of remote file"
+          "description": "URL of remote file."
         }
-      }
+      },
+      "required": [
+        "fileurl"
+      ]
     },
     "APIKey": {
       "type": "object",
@@ -2332,36 +2443,49 @@
           "type": "string",
           "description": "API key"
         }
-      }
+      },
+      "required": [
+        "api-key"
+      ]
     },
     "Token": {
       "type": "object",
       "properties": {
         "token": {
           "type": "string",
-          "description": "Access token (expires after 24 hours)"
+          "description": "Access token (expires after 24 hours)."
         }
-      }
+      },
+      "required": [
+        "token"
+      ]
     },
     "TokenInfo": {
       "type": "object",
       "properties": {
         "found": {
           "type": "string",
-          "description": "Whether the token is still active or not"
+          "description": "Whether the token is still active or not.",
+          "enum": [
+            "true",
+            "false"
+          ]
         },
         "ttl": {
           "type": "integer",
-          "description": "Remaning time to live"
+          "description": "Remaning time to live."
         }
-      }
+      },
+      "required": [
+        "found"
+      ]
     },
     "SubmissionToExtractor": {
       "type": "object",
       "properties": {
         "extractor": {
           "type": "string",
-          "description": "Extractor id, for example ncsa.image.metadata"
+          "description": "Extractor id, for example ncsa.image.metadata."
         }
       }
     },
@@ -2370,9 +2494,20 @@
       "properties": {
         "file": {
           "type": "string",
-          "description": "File id, for example URL to DAP output or file ID for DTS input"
+          "description": "File id, for example URL to DAP output or file ID for DTS input."
         }
-      }
+      },
+      "required": [
+        "file"
+      ]
+    },
+    "TooManyRequests": {
+      "type": "string",
+      "description": "Too many requests. Try again in $seconds seconds."
+    },
+    "InvalidCredentials": {
+      "type": "string",
+      "description": "Invalid credentials."
     },
     "Event": {
       "type": "object",
@@ -2390,6 +2525,21 @@
           "type": "string"
         },
         "user": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "clientIP",
+        "date",
+        "resource",
+        "eventType",
+        "user"
+      ]
+    },
+    "Success": {
+      "type": "object",
+      "properties": {
+        "status": {
           "type": "string"
         }
       }

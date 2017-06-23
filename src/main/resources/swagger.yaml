@@ -1,17 +1,17 @@
 swagger: '2.0'
 info:
   title: Brown Dog API
-  description: 'Documentation for the [Brown Dog](http://browndog.ncsa.illinois.edu/) API'
+  description: 'Documentation for the [Brown Dog](http://browndog.ncsa.illinois.edu/) API.'
   termsOfService: 'http://browndog.ncsa.illinois.edu'
   contact:
     name: Brown Dog Support
     url: >-
       https://opensource.ncsa.illinois.edu/confluence/questions/topics/41156618/brown-dog
-    email: sbrad77@illinois.edu
+    email: browndog-support@ncsa.illinois.edu
   license:
     name: University of Illinois/NCSA Open Source License
     url: 'https://opensource.org/licenses/NCSA'
-  version: 0.1.0
+  version: 0.2.0
 host: bd-api-dev.ncsa.illinois.edu
 basePath: /v1
 schemes:
@@ -19,43 +19,58 @@ schemes:
 produces:
   - application/json
 securityDefinitions:
-  token:
+  TokenHeader:
     type: apiKey
     in: header
     name: Authorization
+    description: |
+      Access token can be provided in the header or as a query parameter.
+  TokenQueryParam:
+    type: apiKey
+    in: query
+    name: token
+    description: |
+      Access token can be provided in the header or as a query parameter.
   login:
     type: basic
 security:
-  - token: []
+  - TokenHeader: []
+  - TokenQueryParam: []
 paths:
   /keys:
     post:
-      summary: Create a new api key
-      description: Create a new api key
+      summary: Create a new api key.
+      description: >-
+        Create a new API key. Keys never expire and have to manually be deleted.
+        This method requires a valid Brown Dog username/password. You can
+        request one [here](https://browndog.ncsa.illinois.edu/signup/). Once you
+        a have key you can keep reusing it to create access tokens. Access
+        tokens are required for most endpoints.
       tags:
         - Authorization
       security:
         - login: []
       responses:
         '200':
-          description: Newly created api key
+          description: Newly created api key.
           schema:
             $ref: '#/definitions/APIKey'
+        '403':
+          description: Invalid credentials.
+          schema:
+            $ref: '#/definitions/InvalidCredentials'
         default:
-          description: Unexpected error
+          description: Unexpected error.
           schema:
             $ref: '#/definitions/Error'
   '/keys/{key}/tokens':
     post:
-      summary: Create a new access token from api key
-      description: >
-        Most endpoints require a token. API keys are unique and never expire. 
-
-        Users, however, can create as many tokens as they want which are in turn
-        associated with their key. 
-
-        Tokens expire after 24 hours. After that a new token will have to be
-        created.
+      summary: Create a new access token from an API key.
+      description: >-
+        Most endpoints require an access token. API keys are unique and never
+        expire. A client can create as many access tokens as they need for each 
+        key. Tokens expire after 24 hours. After that a new token will have to 
+        be created. Each token is bound to the key used to created it.
       tags:
         - Authorization
       parameters:
@@ -66,7 +81,7 @@ paths:
           type: string
       responses:
         '200':
-          description: Newly created token
+          description: Newly created token.
           schema:
             $ref: '#/definitions/Token'
         default:
@@ -75,8 +90,8 @@ paths:
             $ref: '#/definitions/Error'
   '/keys/{key}':
     delete:
-      summary: Delete api key and all related access tokens
-      description: Delete api key and all related access tokens
+      summary: Delete api key and all related access tokens.
+      description: Delete api key and all related access tokens.
       tags:
         - Authorization
       security:
@@ -89,30 +104,34 @@ paths:
           type: string
       responses:
         '200':
-          description: Whether the operation was successful or not
+          description: Whether the operation was successful or not.
           schema:
-            $ref: '#/definitions/Status'
+            $ref: '#/definitions/Success'
+        '403':
+          description: Invalid credentials.
+          schema:
+            $ref: '#/definitions/InvalidCredentials'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
   '/tokens/{token}':
     get:
-      summary: Get info about token
-      description: >
+      summary: Get info about token.
+      description: >-
         Retrieves whether the token is still alive and what the remaining time
-        to live is. 
+        to live is.
       tags:
         - Authorization
       parameters:
         - name: token
           in: path
-          description: Access token
+          description: Access token.
           required: true
           type: string
       responses:
         '200':
-          description: Newly created token
+          description: Newly created token.
           schema:
             $ref: '#/definitions/TokenInfo'
         default:
@@ -120,8 +139,8 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     delete:
-      summary: Delete token
-      description: Delete token
+      summary: Delete token.
+      description: Delete token. If not deleted a token will auto expire after 24 hours.
       tags:
         - Authorization
       security:
@@ -129,32 +148,36 @@ paths:
       parameters:
         - name: token
           in: path
-          description: Access token
+          description: Access token.
           required: true
           type: string
       responses:
         '200':
-          description: Whether the operation was successful or not
+          description: Whether the operation was successful or not.
           schema:
-            $ref: '#/definitions/Status'
+            $ref: '#/definitions/Success'
+        '403':
+          description: Invalid credentials.
+          schema:
+            $ref: '#/definitions/InvalidCredentials'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
   /events/latest:
     get:
-      summary: Get latest n events
-      description: |
-        Get latest n events, where n is specified as a query parameter.
+      summary: Get latest n events.
+      description: 'Get latest n events, where n is specified as a query parameter.'
       tags:
         - Events
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       parameters:
         - name: limit
           in: query
           description: How many events to show
-          required: true
+          required: false
           type: integer
       responses:
         '200':
@@ -163,49 +186,54 @@ paths:
             type: array
             items:
               $ref: '#/definitions/Event'
+        '401':
+          $ref: '#/responses/UnauthorizedError'
+        '429':
+          $ref: '#/responses/TooManyRequestsError'
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
   /conversions/outputs:
     get:
-      summary: List all output formats that can be reached
-      description: |
-        List all output formats that can be reached
+      summary: List available conversion output formats.
+      description: List all output formats that can be reached.
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
+      produces:
+        - text/plain
       responses:
         '200':
-          description: An array of available output file formats
+          description: >-
+            An list of available output file formats as plain text with new
+            lines delimiters.
           schema:
-            type: array
-            items:
-              type: string
+            type: string
         default:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
   /conversions/inputs:
     get:
-      summary: >-
-        List all input formats that can be accepted. Limit the number of hops
-        allowed by setting chain parameter, e.g. ?chain=2
+      summary: List all supported input formats.
       description: >-
         List all input formats that can be accepted. Limit the number of hops
         allowed by setting chain parameter, e.g. ?chain=2
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
+      produces:
+        - text/html
       responses:
         '200':
           description: An array of available input file formats
           schema:
-            type: array
-            items:
-              type: string
+            type: string
         default:
           description: Unexpected error
           schema:
@@ -223,7 +251,8 @@ paths:
           required: true
           type: string
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       responses:
         '200':
           description: An array of available output file formats
@@ -242,7 +271,8 @@ paths:
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       responses:
         '200':
           description: An array of available output file formats
@@ -261,7 +291,8 @@ paths:
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       parameters:
         - name: output_format
           in: path
@@ -300,7 +331,8 @@ paths:
             type: string
             format: binary
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Conversions
       responses:
@@ -320,7 +352,8 @@ paths:
       description: |
         Convert the specified file to the requested output format
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       parameters:
         - name: output_format
           in: path
@@ -356,7 +389,8 @@ paths:
       description: |
         Return the conversion path that would be used for this conversion
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       parameters:
         - name: output_format
           in: path
@@ -577,7 +611,8 @@ paths:
           schema:
             $ref: '#/definitions/FileURL'
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -606,7 +641,8 @@ paths:
             type: string
             format: binary
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -631,7 +667,8 @@ paths:
           required: true
           type: string
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -655,7 +692,8 @@ paths:
           required: true
           type: string
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -681,7 +719,8 @@ paths:
           required: true
           type: string
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -760,7 +799,8 @@ paths:
           schema:
             $ref: '#/definitions/SubmissionToExtractor'
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -904,7 +944,8 @@ paths:
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       responses:
         '200':
           description: An array of available output file formats
@@ -928,7 +969,8 @@ paths:
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       responses:
         '200':
           description: An array of available input file formats
@@ -954,7 +996,8 @@ paths:
           required: true
           type: string
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       responses:
         '200':
           description: An array of available output file formats
@@ -974,7 +1017,8 @@ paths:
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       responses:
         '200':
           description: An array of available output file formats
@@ -994,7 +1038,8 @@ paths:
       tags:
         - Conversions
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       parameters:
         - name: output_format
           in: path
@@ -1053,7 +1098,8 @@ paths:
       description: |
         Convert the specified file to the requested output format
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       parameters:
         - name: output_format
           in: path
@@ -1083,7 +1129,8 @@ paths:
       description: |
         Return the conversion path that would be used for this conversion
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       parameters:
         - name: output_format
           in: path
@@ -1305,7 +1352,8 @@ paths:
           schema:
             $ref: '#/definitions/FileURL'
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -1335,7 +1383,8 @@ paths:
             type: string
             format: binary
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -1399,8 +1448,7 @@ paths:
     get:
       deprecated: true
       summary: Gets tags associated with the file
-      description: |
-        Gets tags associated with the file
+      description: Gets tags associated with the file.
       parameters:
         - name: file_id
           in: path
@@ -1421,13 +1469,12 @@ paths:
   '/dts/api/files/{file_id}/versusmetadata':
     get:
       deprecated: true
-      summary: Get Versus metadata associated with the file
-      description: |
-        Get Versus metadata associated with the file
+      summary: Get Versus metadata associated with the file.
+      description: Get Versus metadata associated with the file.
       parameters:
         - name: file_id
           in: path
-          description: File id returned from original file submission for extraction
+          description: File id returned from original file submission for extraction.
           required: true
           type: string
       tags:
@@ -1446,9 +1493,8 @@ paths:
   '/dts/api/files/{file_id}/extractions':
     post:
       deprecated: true
-      summary: Uploads a file in the body for extraction of metadata
-      description: |
-        Uploads a file for extraction using the file's URL
+      summary: Uploads a file in the body for extraction of metadata.
+      description: Uploads a file for extraction using the file's URL.
       consumes:
         - application/json
       produces:
@@ -1456,7 +1502,7 @@ paths:
       parameters:
         - name: file_id
           in: path
-          description: File id returned from original file submission for extraction
+          description: File id returned from original file submission for extraction.
           required: true
           type: string
         - name: body
@@ -1465,7 +1511,8 @@ paths:
           schema:
             $ref: '#/definitions/SubmissionToExtractor'
       security:
-        - token: []
+        - TokenHeader: []
+        - TokenQueryParam: []
       tags:
         - Extractions
       responses:
@@ -1480,14 +1527,13 @@ paths:
   /dts/api/extractors:
     get:
       deprecated: true
-      summary: Lists the past and present registered extractors
-      description: |
-        Lists the past and present registered extractors
+      summary: Lists the past and present registered extractors.
+      description: Lists the past and present registered extractors.
       tags:
         - Extractions
       responses:
         '200':
-          description: An array of extractor ids
+          description: An array of extractor ids.
           schema:
             type: array
             items:
@@ -1499,14 +1545,13 @@ paths:
   /dts/api/extractions/extractors_names:
     get:
       deprecated: true
-      summary: Lists the currently running extractors
-      description: |
-        Lists the currently running extractors
+      summary: Lists the currently running extractors.
+      description: Lists the currently running extractors.
       tags:
         - Extractions
       responses:
         '200':
-          description: An array of extractor ids
+          description: An array of extractor ids.
           schema:
             type: array
             items:
@@ -1518,14 +1563,13 @@ paths:
   /dts/api/extractions/extractors_details:
     get:
       deprecated: true
-      summary: Lists the details of the currently running extractors
-      description: |
-        Lists the details of the currently running extractors
+      summary: Lists the details of the currently running extractors.
+      description: Lists the details of the currently running extractors.
       tags:
         - Extractions
       responses:
         '200':
-          description: An array of extractor details
+          description: An array of extractor details.
           schema:
             type: array
             items:
@@ -1537,9 +1581,8 @@ paths:
   /dts/api/extractions/servers_ips:
     get:
       deprecated: true
-      summary: Lists servers hosting running extractors
-      description: |
-        Lists servers hosting running extractors
+      summary: Lists servers hosting running extractors.
+      description: Lists servers hosting running extractors.
       tags:
         - Extractions
       responses:
@@ -1558,7 +1601,7 @@ paths:
       deprecated: true
       summary: Display an editable workflow for a given transformation
       description: |
-        Display an editable workflow for a given transformation
+        Display an editable workflow for a given transformation.
       tags:
         - Provenance
       parameters:
@@ -1578,52 +1621,70 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+responses:
+  UnauthorizedError:
+    description: API access token missing or invalid.
+  TooManyRequestsError:
+    description: Max number of requests for user depleted.
 definitions:
-  Status:
-    type: object
-    properties:
-      fileurl:
-        type: string
-        description: Whether the operation was successfull or not
   FileURL:
     type: object
     properties:
       fileurl:
         type: string
-        description: URL of remote file
+        description: URL of remote file.
+    required:
+      - fileurl
   APIKey:
     type: object
     properties:
       api-key:
         type: string
         description: API key
+    required:
+      - api-key
   Token:
     type: object
     properties:
       token:
         type: string
-        description: Access token (expires after 24 hours)
+        description: Access token (expires after 24 hours).
+    required:
+      - token
   TokenInfo:
     type: object
     properties:
       found:
         type: string
-        description: Whether the token is still active or not
+        description: Whether the token is still active or not.
+        enum:
+          - 'true'
+          - 'false'
       ttl:
         type: integer
-        description: Remaning time to live
+        description: Remaning time to live.
+    required:
+      - found
   SubmissionToExtractor:
     type: object
     properties:
       extractor:
         type: string
-        description: 'Extractor id, for example ncsa.image.metadata'
+        description: 'Extractor id, for example ncsa.image.metadata.'
   SubmissionToDataWolf:
     type: object
     properties:
       file:
         type: string
-        description: 'File id, for example URL to DAP output or file ID for DTS input'
+        description: 'File id, for example URL to DAP output or file ID for DTS input.'
+    required:
+      - file
+  TooManyRequests:
+    type: string
+    description: Too many requests. Try again in $seconds seconds.
+  InvalidCredentials:
+    type: string
+    description: Invalid credentials.
   Event:
     type: object
     properties:
@@ -1636,6 +1697,17 @@ definitions:
       eventType:
         type: string
       user:
+        type: string
+    required:
+      - clientIP
+      - date
+      - resource
+      - eventType
+      - user
+  Success:
+    type: object
+    properties:
+      status:
         type: string
   Error:
     type: object
