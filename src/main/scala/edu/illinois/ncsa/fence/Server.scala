@@ -149,11 +149,23 @@ object Server extends TwitterServer {
       cf andThen staticFile("/swagger.yaml")
 
     // Conversion endpoints
-    case (Get, Root / "polyglot" / "alive") =>
+    case (Get | Options, Root / "polyglot" / "alive") =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("alive"))
 
     // TODO return JSON
-    case (_, Root / "conversions" / "outputs" ) =>
+    case (Get | Options, Root / "conversions" / "outputs" / format ) =>
+      cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("/outputs/" + format))
+
+    // TODO return JSON
+    case (Get | Options, Root / "conversions" / "outputs" ) =>
+      cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("/outputs"))
+
+    // TODO return JSON
+    case (Get | Options, Root / "conversions" / "inputs" / format ) =>
+      cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("/inputs/" + format))
+
+    // TODO return JSON
+    case (Get | Options, Root / "conversions" / "inputs" ) =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(Path("/outputs"))
 
     case (Get | Options, Root / "conversions" / "file" / fileId) =>
@@ -163,11 +175,29 @@ object Server extends TwitterServer {
     case (Get | Options, Root / "conversions" / "path" / output / input) =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/path/" + output + "/" + input))
 
+    case (Get | Options, Root / "conversions" / "software") =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/software/"))
+
+    case (Get | Options, Root / "conversions" / "software" / software) =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/software/" + software))
+
+    case (Get | Options, Root / "conversions" / "software" / software / outputFormat) =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/software/" + software + "/" + outputFormat))
+
+    case (Get | Options, Root / "conversions" / "servers") =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/servers/"))
+
     case (Get | Options, Root / "conversions" / fileType / path) =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.convertURL(fileType, path)
 
-    case (Post | Options, "conversions" /: path) =>
-      cf andThen tokenFilter andThen quotas andThen Polyglot.convertBytes("/convert" + path)
+    case (Get | Options, Root / "conversions" / "path" / outputFormat) =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/convert"))
+
+    case (Post | Options, "conversions" /: format) =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.convertBytes("/convert" + format)
+
+    case (Get | Options, Root / "conversions") =>
+      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/convert"))
 
     case (_, "polyglot" /: path) =>
       cf andThen tokenFilter andThen Polyglot.polyglotCatchAll(path)
@@ -284,19 +314,16 @@ object Server extends TwitterServer {
       cf andThen Crowd.session()
 
     // Events and Stats
-    case (Options, Root / "events" / "latest") =>
-      cf andThen tokenFilter andThen admin andThen options(Get)
-
-    case (Get, Root / "events" / "latest") =>
+    case (Get | Options, Root / "events" / "latest") =>
       cf andThen tokenFilter andThen admin andThen Events.latestEvents()
 
-    case (Get, Root / "events" / eventId) =>
+    case (Get | Options, Root / "events" / eventId) =>
       cf andThen tokenFilter andThen admin andThen Events.event(eventId)
 
-    case (Get, Root / "events") =>
+    case (Get | Options, Root / "events") =>
       cf andThen tokenFilter andThen admin andThen Events.events()
 
-    case (Get, Root / "stats") =>
+    case (Get | Options, Root / "stats") =>
       cf andThen tokenFilter andThen admin andThen Events.stats()
 
     case _ => notFound
