@@ -13,9 +13,9 @@
       "name": "University of Illinois/NCSA Open Source License",
       "url": "https://opensource.org/licenses/NCSA"
     },
-    "version": "0.2.0"
+    "version": "0.2.1"
   },
-  "host": "bd-api.ncsa.illinois.edu",
+  "host": "bd-api-dev.ncsa.illinois.edu",
   "basePath": "/v1",
   "schemes": [
     "https"
@@ -233,8 +233,8 @@
     },
     "/events/latest": {
       "get": {
-        "summary": "Get latest n events.",
-        "description": "Get latest n events, where n is specified as a query parameter.",
+        "summary": "Get latest n events (Requires ADMIN).",
+        "description": "Get latest n events, where n is specified as a query parameter. Requires administrator privileges",
         "tags": [
           "Events"
         ],
@@ -252,6 +252,7 @@
             "in": "query",
             "description": "How many events to show",
             "required": false,
+            "default": 100,
             "type": "integer"
           }
         ],
@@ -263,6 +264,89 @@
               "items": {
                 "$ref": "#/definitions/Event"
               }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/responses/TooManyRequestsError"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}": {
+      "get": {
+        "summary": "Get specific event (Requires ADMIN).",
+        "description": "Get specific event. Requires administrator privileges",
+        "tags": [
+          "Events"
+        ],
+        "security": [
+          {
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Event id.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event information",
+            "schema": {
+              "$ref": "#/definitions/Event"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/responses/TooManyRequestsError"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Get server statistics (Requires ADMIN).",
+        "description": "Get server statistics. Requires administrator privileges",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics.",
+            "schema": {
+              "$ref": "#/definitions/Statistics"
             }
           },
           "401": {
@@ -330,7 +414,7 @@
           }
         ],
         "produces": [
-          "text/html"
+          "text/plain"
         ],
         "responses": {
           "200": {
@@ -406,6 +490,9 @@
             "TokenQueryParam": []
           }
         ],
+        "produces": [
+          "text/plain"
+        ],
         "responses": {
           "200": {
             "description": "An array of available output file formats",
@@ -425,7 +512,7 @@
         }
       }
     },
-    "/conversions/{output_format}": {
+    "/conversions/outputs/{output_format}": {
       "get": {
         "summary": "List all input formats that can reach the specified output format",
         "description": "List all input formats that can reach the specified output format",
@@ -466,7 +553,9 @@
             }
           }
         }
-      },
+      }
+    },
+    "/conversions/{output_format}": {
       "post": {
         "summary": "Convert the uploaded file to the requested output format",
         "description": "Convert the uploaded file to the requested output format\n",
@@ -486,12 +575,9 @@
           },
           {
             "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "binary"
-            }
+            "in": "formData",
+            "type": "file",
+            "description": "The file to upload."
           }
         ],
         "security": [
@@ -632,6 +718,9 @@
         "tags": [
           "Conversions"
         ],
+        "produces": [
+          "text/plain"
+        ],
         "responses": {
           "200": {
             "description": "An array of available conversion software",
@@ -667,6 +756,9 @@
         "tags": [
           "Conversions"
         ],
+        "produces": [
+          "text/plain"
+        ],
         "responses": {
           "200": {
             "description": "An array of available output formats",
@@ -694,7 +786,7 @@
           {
             "name": "software",
             "in": "path",
-            "description": "Software name.",
+            "description": "Software name. For example ImageMagick.",
             "required": true,
             "type": "string"
           },
@@ -705,6 +797,9 @@
             "required": true,
             "type": "string"
           }
+        ],
+        "produces": [
+          "text/plain"
         ],
         "tags": [
           "Conversions"
@@ -751,56 +846,19 @@
             "description": "Specific software application to use for this conversion. For example PEcAn.\n",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "formData",
+            "type": "file",
+            "description": "The file to upload."
           }
         ],
-        "tags": [
-          "Conversions"
+        "consumes": [
+          "multipart/form-data"
         ],
-        "responses": {
-          "200": {
-            "description": "An array of available conversion software",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "default": {
-            "description": "Unexpected error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
-    "/conversions/software/{software}/{output_format}/{file_url}": {
-      "get": {
-        "summary": "Convert the specified file to the requested output format using the specified software",
-        "description": "Convert the specified file to the requested output format using the specified software\n",
-        "parameters": [
-          {
-            "name": "software",
-            "in": "path",
-            "description": "Software name.",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "output_format",
-            "in": "path",
-            "description": "Output format. For example jpg.",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "file_url",
-            "in": "path",
-            "description": "URL encoded remote file URL",
-            "required": true,
-            "type": "string"
-          }
+        "produces": [
+          "text/plain"
         ],
         "tags": [
           "Conversions"
@@ -830,6 +888,9 @@
         "description": "List all currently available Software Servers\n",
         "tags": [
           "Conversions"
+        ],
+        "produces": [
+          "text/plain"
         ],
         "responses": {
           "200": {
@@ -2535,6 +2596,9 @@
         "eventType",
         "user"
       ]
+    },
+    "Statistics": {
+      "type": "object"
     },
     "Success": {
       "type": "object",
