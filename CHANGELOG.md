@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Added several /conversions/* endpoints that were missing.
 - Fixed file upload issues in swagger definitions.
+- Added events/stats definitions to swagger docs.
+
 
 ## 0.2.0 - 2017-06-26
 ### Changed
