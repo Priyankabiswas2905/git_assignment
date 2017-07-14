@@ -249,6 +249,25 @@ object Server extends TwitterServer {
       cf andThen tokenFilter andThen quotas andThen new ResourceAuthFilter(fileId) andThen
         Clowder.extractBytes("/api/files/" + fileId + "/extractions")
 
+    case (Get | Options, Root / "extractors" / "details") =>
+      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractors"))
+
+    case (Get | Options, Root / "extractors" / "details") =>
+      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractors"))
+
+    case (Get | Options, Root / "extractors" / "running") =>
+      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractions/extractors_names"))
+
+    case (Get | Options, Root / "extractors" / "running" / "servers") =>
+      cf andThen tokenFilter andThen admin andThen Clowder.clowderCatchAll(Path("/api/extractions/servers_ips"))
+
+    case (Get | Options, Root / "extractors" / "instances") =>
+      cf andThen tokenFilter andThen admin andThen Clowder.clowderCatchAll(Path("/api/extractions/extractors_details"))
+
+    case (Get | Options, Root / "extractors" / fileId / "status") =>
+      cf andThen tokenFilter andThen new ResourceAuthFilter(fileId) andThen
+        Clowder.clowderCatchAll(Path("/api/extractions/" + fileId + "/status"))
+
     case (_, Root / "extractors") =>
       cf andThen tokenFilter andThen Clowder.extractorsInfoPath("/get-extractors-info")
 
