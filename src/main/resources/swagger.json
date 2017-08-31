@@ -696,7 +696,7 @@
           {
             "name": "software",
             "in": "path",
-            "description": "Software name.",
+            "description": "Software name. For example ImageMagick.",
             "required": true,
             "type": "string"
           },
@@ -705,13 +705,6 @@
             "in": "path",
             "description": "Output format. For example jpg.",
             "required": true,
-            "type": "string"
-          },
-          {
-            "name": "application",
-            "in": "query",
-            "description": "Specific software application to use for this conversion. For example PEcAn.\n",
-            "required": false,
             "type": "string"
           },
           {
