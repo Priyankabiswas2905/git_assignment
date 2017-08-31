@@ -43,7 +43,7 @@ object Server extends TwitterServer {
   /** Catch all for routes not found */
   val notFound = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
-      log.debug("[Endpoint] Route not found")
+      log.debug("[Endpoint] Route not found: " +  req.path)
       val res = Response(req.version, Status.NotFound)
       res.contentString = "Route not found"
       Future.value(res)
