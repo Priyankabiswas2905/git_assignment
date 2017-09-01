@@ -185,7 +185,7 @@ object Server extends TwitterServer {
       cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/software/" + software + "/" + outputFormat))
 
     case (Post | Options, Root / "conversions" / "software" / software / outputFormat) =>
-      cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/convert/" + outputFormat + "?application=" + software))
+      cf andThen tokenFilter andThen quotas andThen Polyglot.convertBytes("/convert/" + outputFormat, software)
 
     case (Get | Options, Root / "conversions" / "servers") =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/servers/"))
