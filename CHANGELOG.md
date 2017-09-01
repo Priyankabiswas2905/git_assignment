@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- Fixed bug with POST endpoint /conversions/software/{software}/{output_format} [BD-1747](https://opensource.ncsa.illinois.edu/jira/browse/BD-1747)  
+
 ## 0.2.0 - 2017-06-26
 ### Changed
 - Store events in Mongodb, instead of Redis.
