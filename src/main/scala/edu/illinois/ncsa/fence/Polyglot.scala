@@ -60,12 +60,21 @@ object Polyglot {
 
   /**
     * Convert file embedded in the body to a specific file type specified in the URL using Polyglot.
-    * @param fileType output file type
+    * @param path conversion URL path
+    * @param software [Optional] Name of the software using which conversion has to be done.
     */
-  def convertBytes(fileType: String): Service[Request, Response] = {
-    log.debug("[Endpoint] Streaming polyglot upload " + fileType)
+  def convertBytes(path: String, software: String = ""): Service[Request, Response] = {
+    log.debug("[Endpoint] Streaming polyglot upload " + path)
     Service.mk { (req: Request) =>
-      val newPathWithParameters = fileType + "/" + Server.getURIParams(req)
+      // Get new path after appending URL parameters
+      val newPathWithParameters =
+        if (software == "")
+          path + "/" + Server.getURIParams(req)
+        else
+          path + "/" + "?application=" + software + Server.getURIParams(req).replace("?", "&")
+
+      log.debug("Path with parameters: " + newPathWithParameters)
+
       val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
