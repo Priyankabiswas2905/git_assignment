@@ -612,6 +612,39 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+    post:
+      summary: Submits an already uploaded file for extraction of metadata
+      description: |
+        Submits a file for extraction using the file's ID
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from original file submission for extraction
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/SubmissionToExtractor'
+      security:
+        - TokenHeader: []
+        - TokenQueryParam: []
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: File id
+          schema:
+            type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   '/extractions/{file_id}/status':
     get:
       summary: Checks for the status of all extractors processing the file with id
@@ -706,40 +739,6 @@ paths:
             type: array
             items:
               type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  '/extractions/files/{file_id}/extractions':
-    post:
-      summary: Uploads a file in the body for extraction of metadata
-      description: |
-        Uploads a file for extraction using the file's URL
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - name: file_id
-          in: path
-          description: File id returned from original file submission for extraction
-          required: true
-          type: string
-        - name: body
-          in: body
-          required: true
-          schema:
-            $ref: '#/definitions/SubmissionToExtractor'
-      security:
-        - TokenHeader: []
-        - TokenQueryParam: []
-      tags:
-        - Extractions
-      responses:
-        '200':
-          description: File id
-          schema:
-            type: string
         default:
           description: Unexpected error
           schema:

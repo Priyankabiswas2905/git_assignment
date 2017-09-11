@@ -245,10 +245,6 @@ object Server extends TwitterServer {
     case (Post, Root / "extractions" / "url") =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractURL("/api/extractions/upload_url")
 
-    case (Post, Root / "extractions" / fileId) =>
-      cf andThen tokenFilter andThen quotas andThen new ResourceAuthFilter(fileId) andThen
-        Clowder.extractBytes("/api/files/" + fileId + "/extractions")
-
     case (Get | Options, Root / "extractors" / "details") =>
       cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractors"))
 

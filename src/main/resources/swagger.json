@@ -231,139 +231,6 @@
         }
       }
     },
-    "/events/latest": {
-      "get": {
-        "summary": "Get latest n events (Requires ADMIN).",
-        "description": "Get latest n events, where n is specified as a query parameter. Requires administrator privileges",
-        "tags": [
-          "Events"
-        ],
-        "security": [
-          {
-            "TokenHeader": []
-          },
-          {
-            "TokenQueryParam": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "How many events to show",
-            "required": false,
-            "default": 100,
-            "type": "integer"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of events",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Event"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/UnauthorizedError"
-          },
-          "429": {
-            "$ref": "#/responses/TooManyRequestsError"
-          },
-          "default": {
-            "description": "Unexpected error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
-    "/events/{id}": {
-      "get": {
-        "summary": "Get specific event (Requires ADMIN).",
-        "description": "Get specific event. Requires administrator privileges",
-        "tags": [
-          "Events"
-        ],
-        "security": [
-          {
-            "TokenHeader": []
-          },
-          {
-            "TokenQueryParam": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "description": "Event id.",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Event information",
-            "schema": {
-              "$ref": "#/definitions/Event"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/UnauthorizedError"
-          },
-          "429": {
-            "$ref": "#/responses/TooManyRequestsError"
-          },
-          "default": {
-            "description": "Unexpected error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
-    "/stats": {
-      "get": {
-        "summary": "Get server statistics (Requires ADMIN).",
-        "description": "Get server statistics. Requires administrator privileges",
-        "tags": [
-          "Admin"
-        ],
-        "security": [
-          {
-            "TokenHeader": []
-          },
-          {
-            "TokenQueryParam": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Statistics.",
-            "schema": {
-              "$ref": "#/definitions/Statistics"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/UnauthorizedError"
-          },
-          "429": {
-            "$ref": "#/responses/TooManyRequestsError"
-          },
-          "default": {
-            "description": "Unexpected error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
     "/conversions/outputs": {
       "get": {
         "summary": "List available conversion output formats.",
@@ -911,32 +778,6 @@
         }
       }
     },
-    "/extractions/supported_input_types": {
-      "get": {
-        "summary": "Lists the input file format supported by currently running extractors",
-        "description": "Lists the input file format supported by currently running extractors\n",
-        "tags": [
-          "Extractions"
-        ],
-        "responses": {
-          "200": {
-            "description": "An array of available input file formats",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "default": {
-            "description": "Unexpected error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
     "/extractions/url": {
       "post": {
         "summary": "Uploads a file for extraction using the file's URL",
@@ -1059,6 +900,58 @@
         "responses": {
           "200": {
             "description": "File info",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Submits an already uploaded file for extraction of metadata",
+        "description": "Submits a file for extraction using the file's ID\n",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "description": "File id returned from original file submission for extraction",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SubmissionToExtractor"
+            }
+          }
+        ],
+        "security": [
+          {
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
+          }
+        ],
+        "tags": [
+          "Extractions"
+        ],
+        "responses": {
+          "200": {
+            "description": "File id",
             "schema": {
               "type": "string"
             }
@@ -1222,49 +1115,30 @@
         }
       }
     },
-    "/extractions/files/{file_id}/extractions": {
-      "post": {
-        "summary": "Uploads a file in the body for extraction of metadata",
-        "description": "Uploads a file for extraction using the file's URL\n",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "file_id",
-            "in": "path",
-            "description": "File id returned from original file submission for extraction",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/SubmissionToExtractor"
-            }
-          }
-        ],
-        "security": [
-          {
-            "TokenHeader": []
-          },
-          {
-            "TokenQueryParam": []
-          }
-        ],
+    "/extractors": {
+      "get": {
+        "summary": "List all extractors that would be executed for the given file type specified in the parameters, e.g. ?file_type=image/jpeg",
+        "description": "List all extractors that would be executed for the given file type specified in the parameters, e.g. ?filey_type-image/jpeg\n",
         "tags": [
           "Extractions"
         ],
+        "parameters": [
+          {
+            "name": "file_type",
+            "in": "query",
+            "description": "File type, for example image/jpeg",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "File id",
+            "description": "A list of extractors",
             "schema": {
-              "type": "string"
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           },
           "default": {
@@ -1276,10 +1150,10 @@
         }
       }
     },
-    "/extractors/registered": {
+    "/extractors/details": {
       "get": {
-        "summary": "Lists the past and present registered extractors",
-        "description": "Lists the past and present registered extractors\n",
+        "summary": "Lists the past and present registered extractors.",
+        "description": "Lists the past and present registered extractors.\n",
         "tags": [
           "Extractions"
         ],
@@ -1328,77 +1202,42 @@
         }
       }
     },
-    "/extractors/details": {
+    "/extractors/running/servers": {
       "get": {
-        "summary": "Lists the details of the currently running extractors",
-        "description": "Lists the details of the currently running extractors\n",
-        "tags": [
-          "Extractions"
-        ],
-        "responses": {
-          "200": {
-            "description": "An array of extractor details",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "default": {
-            "description": "Unexpected error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
-    "/extractors": {
-      "get": {
-        "summary": "List all extractors that would be executed for the given file type specified in the parameters, e.g. ?file_type=image/jpeg",
-        "description": "List all extractors that would be executed for the given file type specified in the parameters, e.g. ?filey_type-image/jpeg\n",
-        "tags": [
-          "Extractions"
-        ],
-        "parameters": [
-          {
-            "name": "file_type",
-            "in": "query",
-            "description": "File type, for example image/jpeg",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A list of extractors",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          },
-          "default": {
-            "description": "Unexpected error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        }
-      }
-    },
-    "/extractions/servers_ips": {
-      "get": {
-        "summary": "Lists servers hosting running extractors",
-        "description": "Lists servers hosting running extractors\n",
+        "summary": "Lists servers hosting running extractors (Requires ADMIN).",
+        "description": "Lists servers hosting running extractors. Requires administrator privileges.\n",
         "tags": [
           "Extractions"
         ],
         "responses": {
           "200": {
             "description": "An array of server IPs",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/extractors/instances": {
+      "get": {
+        "summary": "Lists the details of the currently running extractors (Requires ADMIN).",
+        "description": "Lists the details of the currently running extractors. Requires administrator privileges.\n",
+        "tags": [
+          "Extractions"
+        ],
+        "responses": {
+          "200": {
+            "description": "An array of extractor details",
             "schema": {
               "type": "array",
               "items": {
@@ -2465,6 +2304,139 @@
                 "type": "string"
               }
             }
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/events/latest": {
+      "get": {
+        "summary": "Get latest n events (Requires ADMIN).",
+        "description": "Get latest n events, where n is specified as a query parameter. Requires administrator privileges.",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "How many events to show",
+            "required": false,
+            "default": 100,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of events",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Event"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/responses/TooManyRequestsError"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/events/{id}": {
+      "get": {
+        "summary": "Get specific event (Requires ADMIN).",
+        "description": "Get specific event. Requires administrator privileges",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Event id.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event information",
+            "schema": {
+              "$ref": "#/definitions/Event"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/responses/TooManyRequestsError"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/stats": {
+      "get": {
+        "summary": "Get server statistics (Requires ADMIN).",
+        "description": "Get server statistics. Requires administrator privileges",
+        "tags": [
+          "Admin"
+        ],
+        "security": [
+          {
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics.",
+            "schema": {
+              "$ref": "#/definitions/Statistics"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/UnauthorizedError"
+          },
+          "429": {
+            "$ref": "#/responses/TooManyRequestsError"
           },
           "default": {
             "description": "Unexpected error",
