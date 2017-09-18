@@ -742,6 +742,54 @@
         }
       }
     },
+    "/conversions/software/{software}/{output_format}/{file_url}": {
+      "get": {
+        "200": {
+          "description": "Link to converted file",
+          "schema": {
+            "type": "string"
+          }
+        },
+        "summary": "Convert file using its URL and a specific software",
+        "description": "Convert the specified file to the requested output format using the file's URL and a specific software as inputs\n",
+        "parameters": [
+          {
+            "name": "software",
+            "in": "path",
+            "description": "Software name. For example ImageMagick.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "output_format",
+            "in": "path",
+            "description": "Output format. For example jpg.",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "file_url",
+            "in": "path",
+            "description": "Encoded URL of the file that needs to be converted.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "tags": [
+          "Conversions"
+        ],
+        "responses": null,
+        "default": {
+          "description": "Unexpected error",
+          "schema": {
+            "$ref": "#/definitions/Error"
+          }
+        }
+      }
+    },
     "/conversions/servers": {
       "get": {
         "summary": "List all currently available Software Servers",

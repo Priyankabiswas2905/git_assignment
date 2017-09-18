@@ -125,11 +125,20 @@ object Polyglot {
     * @param fileType output file type
     * @param encodedUrl input URL encoded URL
     */
-  def convertURL(fileType: String, encodedUrl: String): Service[Request, Response] = {
+  def convertURL(fileType: String, encodedUrl: String, software: String = ""): Service[Request, Response] = {
     val url = URLDecoder.decode(encodedUrl, "UTF-8")
     log.debug("[Endpoint] Convert " + url)
     Service.mk { (req: Request) =>
-      val newPathWithParameters = "/convert/" + fileType + "/" + encodedUrl + Server.getURIParams(req)
+
+      // Get new path after appending URL parameters
+      val newPathWithParameters =
+        if (software == "")
+          "/convert/" + fileType + "/" + encodedUrl + Server.getURIParams(req)
+        else
+          "/convert/" + fileType + "/" + encodedUrl + "/" + "?application=" + software + Server.getURIParams(req).replace("?", "&")
+
+      log.debug("Path with parameters: " + newPathWithParameters)
+
       val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
       req.headerMap.keys.foreach { key =>
         req.headerMap.get(key).foreach { value =>
@@ -139,6 +148,7 @@ object Polyglot {
       }
       newReq.headerMap.set(Fields.Host, Services.getServiceHost("dap"))
       newReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dap"))
+      newReq.headerMap.set(Fields.Accept, "text/plain")
       val rep = polyglot(newReq)
       rep.flatMap { r =>
         val hostname = conf.getString("fence.hostname")
