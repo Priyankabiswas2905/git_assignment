@@ -526,14 +526,14 @@ paths:
         tags:
           - Conversions
         responses:
-        '200':
-          description: Link to converted file
-          schema:
-            type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
+          '200':
+            description: Link to converted file
+            schema:
+              type: string
+          default:
+            description: Unexpected error
+            schema:
+              $ref: '#/definitions/Error'
   /conversions/servers:
     get:
       summary: List all currently available Software Servers
@@ -809,6 +809,30 @@ paths:
           description: An array of extractor ids
           schema:
             type: array
+            items:
+              type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  /extractors/details/{extractor_name}:
+    get:
+      summary: Get details about a specific extractor.
+      description: |
+        Get details about a specific extractor.
+      tags:
+        - Extractions
+      parameters:
+        - name: extractor_name
+          in: path
+          description: 'Extractor name, for example ncsa.image.preview'
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Details about a specific extractor
+          schema:
+            type: object
             items:
               type: string
         default:

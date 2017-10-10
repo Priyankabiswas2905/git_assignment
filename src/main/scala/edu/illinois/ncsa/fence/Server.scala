@@ -254,8 +254,8 @@ object Server extends TwitterServer {
     case (Get | Options, Root / "extractors" / "details") =>
       cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractors"))
 
-    case (Get | Options, Root / "extractors" / "details") =>
-      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractors"))
+    case (Get | Options, Root / "extractors" / "details" / extractorName) =>
+      cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractors/" + extractorName))
 
     case (Get | Options, Root / "extractors" / "running") =>
       cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractions/extractors_names"))
