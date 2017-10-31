@@ -35,6 +35,7 @@ libraryDependencies ++= Seq(
   "org.mongodb.scala" %% "mongo-scala-driver" % "1.2.1",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.4.4",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.4.4",
+  "com.unboundid" % "unboundid-ldapsdk" % "4.0.1",
 
 //  "com.twitter.finatra" %% "finatra-http" % versions.finatra % "provided",
 //  "com.twitter.finatra" %% "finatra-httpclient" % versions.finatra % "provided",
