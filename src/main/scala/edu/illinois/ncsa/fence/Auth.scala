@@ -11,7 +11,7 @@ import com.twitter.util.Future
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Crowd.{AuthorizeUserPassword => CrowdAuthorizeUserPassword}
 import edu.illinois.ncsa.fence.Server._
-import edu.illinois.ncsa.fence.auth.LocalAuthUser
+import edu.illinois.ncsa.fence.auth.{LDAPAuthUser, LocalAuthUser}
 import edu.illinois.ncsa.fence.util.GatewayHeaders
 
 
@@ -131,6 +131,9 @@ object Auth {
       case "local" =>
         log.debug("Using local authorization")
         new LocalAuthUser
+      case "ldap" =>
+        log.debug("Using LDAP authentication")
+        new LDAPAuthUser
       case _ =>
         log.debug("Defaulting to crowd authorization")
         new CrowdAuthorizeUserPassword
