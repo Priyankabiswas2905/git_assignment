@@ -22,8 +22,8 @@ class LDAPAuthUser extends SimpleFilter[Request, Response]{
   private val port = conf.getInt("ldap.port")
   private val baseDN = conf.getString("ldap.baseDN")
   private val trustAllCertificates = conf.getBoolean("ldap.trustAllCertificates")
-  private val baseUserNamespace = conf.getString("ldap.baseUserNamespace")
-  private val baseGroupNamespace = conf.getString("ldap.baseGroupNamespace")
+  private val baseUserNamespace = conf.getString("ldap.userDN") + "," + baseDN
+  private val baseGroupNamespace = conf.getString("ldap.groupDN") + "," + baseDN
   private val objectClass = conf.getString("ldap.objectClass")
 
   private val trustManager = if (trustAllCertificates) new TrustAllTrustManager() else JVMDefaultTrustManager.getInstance()
