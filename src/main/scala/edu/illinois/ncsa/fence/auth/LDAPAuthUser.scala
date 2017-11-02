@@ -43,73 +43,63 @@ class LDAPAuthUser extends SimpleFilter[Request, Response]{
         // Check for required number of credentials
         if (credentials.size == 2) {
 
-          // Check for presence of @ in the email id
-          if (credentials(0).contains("@")) {
+          val uid = credentials(0)
+          val password = credentials(1)
 
-            // Get user id excluding @
-            val uid = credentials(0).substring(0, credentials(0).indexOf("@"))
+          try {
+            // Create LDAP connection
+            ldapConnection = new LDAPConnection(socketFactory, hostname, port)
 
-            try {
-              // Create LDAP connection
-              ldapConnection = new LDAPConnection(socketFactory, hostname, port)
+            // Bind user to the connection.
+            // This will throw an exception if the user credentials do not match any LDAP entry.
+            // This exception is later caught to refuse access to the user.
+            ldapConnection.bind("uid=" + uid + "," + baseUserNamespace, password)
 
-              // Bind user to the connection.
-              // This will throw an exception if the user credentials do not match any LDAP entry.
-              // This exception is later caught to refuse access to the user.
-              ldapConnection.bind("uid=" + uid + "," + baseUserNamespace, credentials(1))
+            // Filter to search the user's membership in the specified group
+            val searchFilter: Filter = Filter.create("(&(objectClass=" + objectClass + ")(memberOf=cn=" + group + ","
+              + baseGroupNamespace + ")(uid=" + uid + "))")
 
-              // Filter to search the user's membership in the specified group
-              val searchFilter: Filter = Filter.create("(&(objectClass=" + objectClass + ")(memberOf=cn=" + group + ","
-                + baseGroupNamespace + ")(uid=" + uid + "))")
+            // Perform group membership search
+            val searchResult: SearchResult = ldapConnection.search(baseDN, SearchScope.SUB, searchFilter)
+            log.trace(searchResult.getEntryCount + " LDAP entries returned.")
 
-              // Perform group membership search
-              val searchResult: SearchResult = ldapConnection.search(baseDN, SearchScope.SUB, searchFilter)
-              log.trace(searchResult.getEntryCount + " LDAP entries returned.")
-
-              // User is part of the specified group
-              if (searchResult.getEntryCount == 1) {
-                log.trace("User successfully validated. Forwarding request after checking against LDAP.")
-                continue(request)
-              }
-              // User is not part of the specified group
-              else {
-                val errorResponse = Response(Version.Http11, Status.Forbidden)
-                errorResponse.contentString = "User not authorized: Not a member of the specified LDAP group."
-                Future(errorResponse)
-              }
+            // User is part of the specified group
+            if (searchResult.getEntryCount == 1) {
+              log.trace("User successfully validated. Forwarding request after checking against LDAP.")
+              continue(request)
             }
-            catch {
-              case exception: LDAPException =>
-                var errorResponse: Response = null
-
-                exception.getResultCode match {
-                  case ResultCode.CONNECT_ERROR =>
-                    errorResponse = Response(Version.Http11, Status.InternalServerError)
-                    errorResponse.contentString = "An error occurred while connecting to LDAP server. Please try again later."
-                    log.error("Error connecting to LDAP server: " + hostname + ":" + port)
-                  case ResultCode.OPERATIONS_ERROR =>
-                    errorResponse = Response(Version.Http11, Status.Forbidden)
-                    errorResponse.contentString = "User not authorized: Invalid username or password."
-                    log.error("Error checking credentials. Invalid username or password. " + exception.getDiagnosticMessage)
-                  case _ =>
-                    errorResponse = Response(Version.Http11, Status.InternalServerError)
-                    errorResponse.contentString = "An unknown LDAP error occurred. Please try again later."
-                    log.error("Unknown LDAP error. " + exception.getDiagnosticMessage)
-                }
-                Future(errorResponse)
-            }
-            finally {
-              // Close connection
-              if (ldapConnection != null)
-                ldapConnection.close()
+            // User is not part of the specified group
+            else {
+              val errorResponse = Response(Version.Http11, Status.Forbidden)
+              errorResponse.contentString = "User not authorized: Not a member of the specified LDAP group."
+              log.error("User not a member of the LDAP group: " + group)
+              Future(errorResponse)
             }
           }
-          // Invalid email address
-          else {
-            log.error("Error checking credentials. Invalid email ID format.")
-            val errorResponse = Response(Version.Http11, Status.Forbidden)
-            errorResponse.contentString = "User not authorized: Invalid username or password."
-            Future(errorResponse)
+          catch {
+            case exception: LDAPException =>
+              var errorResponse: Response = null
+
+              exception.getResultCode match {
+                case ResultCode.CONNECT_ERROR =>
+                  errorResponse = Response(Version.Http11, Status.InternalServerError)
+                  errorResponse.contentString = "An error occurred while connecting to LDAP server. Please try again later."
+                  log.error("Error connecting to LDAP server: " + hostname + ":" + port)
+                case ResultCode.OPERATIONS_ERROR =>
+                  errorResponse = Response(Version.Http11, Status.Forbidden)
+                  errorResponse.contentString = "User not authorized: Invalid username or password."
+                  log.error("Error checking credentials. Invalid username or password. " + exception.getDiagnosticMessage)
+                case _ =>
+                  errorResponse = Response(Version.Http11, Status.InternalServerError)
+                  errorResponse.contentString = "An unknown LDAP error occurred. Please try again later."
+                  log.error("Unknown LDAP error. " + exception.getDiagnosticMessage)
+              }
+              Future(errorResponse)
+          }
+          finally {
+            // Close connection
+            if (ldapConnection != null)
+              ldapConnection.close()
           }
         }
         else {
