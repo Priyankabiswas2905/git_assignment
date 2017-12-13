@@ -60,6 +60,8 @@ object Polyglot {
 
   /**
     * Convert file embedded in the body to a specific file type specified in the URL using Polyglot.
+    * Polyglot will return a URL to the converted file. This URL will be on the polyglot server. We
+    * need to convert this to an equivalent Brown Dog conversions/file URL.
     * @param path conversion URL path
     * @param software [Optional] Name of the software using which conversion has to be done.
     */
@@ -85,26 +87,25 @@ object Polyglot {
       newReq.headerMap.set(Fields.Host, Services.getServiceHost("dap"))
       newReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dap"))
       newReq.headerMap.set(Fields.Accept, "text/plain")
+
       val rep = polyglot(newReq)
       rep.flatMap { r =>
         log.debug("Uploaded bytes for conversion " +  req.getLength())
-        val hostname = conf.getString("fence.hostname")
+
+        val fenceHostname = conf.getString("fence.hostname")
         val dapURL = conf.getString("dap.url")
-        if (r.contentString.contains(dapURL)) {
-          val body = r.contentString.replaceAll("http://" + dapURL, hostname + "/dap")
-          log.debug(s"New request body is $body")
-          r.setContentString(body)
-          r.headerMap.set(Fields.ContentLength, body.length.toString)
-        }
+        convertDapUrlToBrownDog(r, fenceHostname, dapURL)
+
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
         r.headerMap.remove(Fields.AccessControlAllowCredentials)
         r.headerMap.remove("Access-control-allow-credential")
+
         // log events
         val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
         val logKey = "conversions"
         val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
         // extract file id
-        val pattern = ((hostname + "/dap/file/").replace("/","\\/") + "(.+)").r
+        val pattern = ((fenceHostname + "/conversions/file/").replace("/","\\/") + "(.+)").r
         r.contentString match {
           case pattern(fileId) =>
             Mongodb.addEvent("conversion", "urn:bdid:" + fileId, username, clientIP, fileId)
@@ -117,6 +118,22 @@ object Polyglot {
         Future.value(r)
       }
       rep
+    }
+  }
+
+  /**
+    * Update the response from Polyglot. It contains the URL of the converted file releative to
+    * the polyglot host. Convert this URL to a valid Brown Dog url.
+    * @param polyglotResponse
+    * @param fenceHostname
+    * @param dapURL
+    */
+  private def convertDapUrlToBrownDog(polyglotResponse:Response, fenceHostname:String, dapURL: String): Unit = {
+    if (polyglotResponse.contentString.contains(dapURL)) {
+      val body = polyglotResponse.contentString.replaceAll("http://" + dapURL+ "/file", fenceHostname + "/conversions/file")
+      log.debug(s"New request body is $body")
+      polyglotResponse.setContentString(body)
+      polyglotResponse.headerMap.set(Fields.ContentLength, body.length.toString)
     }
   }
 
