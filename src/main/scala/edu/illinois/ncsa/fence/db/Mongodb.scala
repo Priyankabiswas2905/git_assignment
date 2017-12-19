@@ -36,7 +36,7 @@ object Mongodb {
 
   private val db: MongoDatabase = client.getDatabase(conf.getString("mongodb.database"))
 
-  private val events: MongoCollection[Document] = db.getCollection("events")
+  private val events: MongoCollection[Document] = db.getCollection("events").withWriteConcern(WriteConcern.ACKNOWLEDGED)
 
   /**
     * Create indexes if they don't exist. Since observables returned by createIndex() are not executed
