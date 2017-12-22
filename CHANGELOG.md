@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Fixed
-- Fixed bug with POST endpoint /conversions/software/{software}/{output_format} [BD-1747](https://opensource.ncsa.illinois.edu/jira/browse/BD-1747)
-- Added missing GET endpoint /conversions/software/{software}/{output_format}/{file_url} [BD-1754](https://opensource.ncsa.illinois.edu/jira/browse/BD-1754)
+- Fixed bug with POST endpoint /conversions/software/{software}/{output_format}. 
+  [BD-1747](https://opensource.ncsa.illinois.edu/jira/browse/BD-1747)
+- Added missing GET endpoint /conversions/software/{software}/{output_format}/{file_url}. 
+  [BD-1754](https://opensource.ncsa.illinois.edu/jira/browse/BD-1754)
+- Block when writing events to Mongo. This should fix bd tests.
+  [BD-1865](https://opensource.ncsa.illinois.edu/jira/browse/BD-1865)
 
 ## 0.2.0 - 2017-06-26
 ### Changed
