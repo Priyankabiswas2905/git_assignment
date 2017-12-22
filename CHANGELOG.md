@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [BD-1754](https://opensource.ncsa.illinois.edu/jira/browse/BD-1754)
 - Block when writing events to Mongo. This should fix bd tests.
   [BD-1865](https://opensource.ncsa.illinois.edu/jira/browse/BD-1865)
+- Fixed Polyglot output file URL to point to new API endpoint.
+  [BD-1746](https://opensource.ncsa.illinois.edu/jira/browse/BD-1746)
 
 ## 0.2.0 - 2017-06-26
 ### Changed
