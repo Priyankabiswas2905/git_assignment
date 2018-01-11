@@ -5,7 +5,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 0.3.0 - 2018-01-12
-
 ### Fixed
 - Fixed bug with POST endpoint /conversions/software/{software}/{output_format}. 
   [BD-1747](https://opensource.ncsa.illinois.edu/jira/browse/BD-1747)
@@ -15,6 +14,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [BD-1865](https://opensource.ncsa.illinois.edu/jira/browse/BD-1865)
 - Fixed Polyglot output file URL to point to new API endpoint.
   [BD-1746](https://opensource.ncsa.illinois.edu/jira/browse/BD-1746)
+
+## 0.2.1 - 2017-07-09
+### Fixed
+- Added several /conversions/* endpoints that were missing.
+- Fixed file upload issues in swagger definitions.
+- Added events/stats definitions to swagger docs.
 
 ## 0.2.0 - 2017-06-26
 ### Changed
