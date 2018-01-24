@@ -817,7 +817,7 @@
         ],
         "responses": {
           "200": {
-            "description": "File content",
+            "description": "File content"
           },
           "default": {
             "description": "Unexpected error",
