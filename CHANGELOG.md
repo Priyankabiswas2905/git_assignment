@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 0.3.1 - 2018-01-25
+### Fixed
 - Fixed bug in swagger.json - API documentation not getting displayed because of an extra comma in swagger.json.
 
 ## 0.3.0 - 2018-01-12
