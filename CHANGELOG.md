@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 0.3.1 - 2018-01-25
+- Fixed bug in swagger.json - API documentation not getting displayed because of an extra comma in swagger.json.
+
 ## 0.3.0 - 2018-01-12
 ### Fixed
 - Fixed bug with POST endpoint /conversions/software/{software}/{output_format}. 
@@ -14,7 +17,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [BD-1865](https://opensource.ncsa.illinois.edu/jira/browse/BD-1865)
 - Fixed Polyglot output file URL to point to new API endpoint.
   [BD-1746](https://opensource.ncsa.illinois.edu/jira/browse/BD-1746)
-- Fixed bug in swagger.json - API documentation not getting displayed because of an extra comma in swagger.json.
 
 ## 0.2.1 - 2017-07-09
 ### Fixed
