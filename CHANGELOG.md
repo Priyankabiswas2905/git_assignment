@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   [BD-1865](https://opensource.ncsa.illinois.edu/jira/browse/BD-1865)
 - Fixed Polyglot output file URL to point to new API endpoint.
   [BD-1746](https://opensource.ncsa.illinois.edu/jira/browse/BD-1746)
+- Fixed bug in swagger.json - API documentation not getting displayed because of an extra comma in swagger.json.
 
 ## 0.2.1 - 2017-07-09
 ### Fixed
