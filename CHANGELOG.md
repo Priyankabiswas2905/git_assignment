@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+ - Increased default maximum request size to 50 MB.
+   [BD-2041](https://opensource.ncsa.illinois.edu/jira/browse/BD-2041)
+
+### Added
+
 ### Fixed
 - Fixed bug with POST endpoint /conversions/software/{software}/{output_format}. 
   [BD-1747](https://opensource.ncsa.illinois.edu/jira/browse/BD-1747)

@@ -2,6 +2,7 @@ package edu.illinois.ncsa.fence
 
 import java.util.UUID
 
+import com.twitter.conversions.storage._
 import com.twitter.finagle.http.Method.{Delete, Get, Options, Post}
 import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http.filter.Cors
@@ -354,7 +355,10 @@ object Server extends TwitterServer {
   }
 
   def start(): ListeningServer = {
-    val server = Http.server.withStreaming(enabled = true).serve(":8080", router)
+    val server = Http.server
+      .withStreaming(enabled = true)
+      .withMaxRequestSize(conf.getInt("quotas.requests.size").megabytes)
+      .serve(":8080", router)
     onExit {
       log.info("Closing server...")
       server.close()
