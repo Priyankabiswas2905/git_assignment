@@ -828,6 +828,43 @@
         }
       }
     },
+    "/conversions/file/{file_id}/log": {
+      "get": {
+        "summary": "Retrieve the log of a file conversion.",
+        "description": "Retrieve the log details of a file conversion.\n",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "description": "File id returned from the conversion process.",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "security": [
+          {
+            "TokenHeader": []
+          },
+          {
+            "TokenQueryParam": []
+          }
+        ],
+        "tags": [
+          "Conversions"
+        ],
+        "responses": {
+          "200": {
+            "description": "Log file content"
+          },
+          "default": {
+            "description": "Unexpected error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
     "/conversions/servers": {
       "get": {
         "summary": "List all currently available Software Servers",

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
    [BD-2041](https://opensource.ncsa.illinois.edu/jira/browse/BD-2041)
 
 ### Added
+ - Added a GET endpoint to retrieve the log details of a conversion.
+   [BD-2067](https://opensource.ncsa.illinois.edu/jira/browse/BD-2067)
 
 ### Fixed
 - Fixed bug with POST endpoint /conversions/software/{software}/{output_format}. 

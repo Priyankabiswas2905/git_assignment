@@ -173,6 +173,10 @@ object Server extends TwitterServer {
       cf andThen tokenFilter andThen rateLimit andThen new ResourceAuthFilter(fileId) andThen
         Polyglot.polyglotCatchAll(Path("/file/" + fileId))
 
+    case (Get | Options, Root / "conversions" / "file" / fileId / "log") =>
+      cf andThen tokenFilter andThen rateLimit andThen new ResourceAuthFilter(fileId) andThen
+        Polyglot.polyglotCatchAll(Path("/file/" + fileId + ".log"))
+
     case (Get | Options, Root / "conversions" / "path" / output / input) =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/path/" + output + "/" + input))
 

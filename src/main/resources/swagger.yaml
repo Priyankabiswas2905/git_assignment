@@ -5,8 +5,7 @@ info:
   termsOfService: 'http://browndog.ncsa.illinois.edu'
   contact:
     name: Brown Dog Support
-    url: >-
-      https://opensource.ncsa.illinois.edu/confluence/questions/topics/41156618/brown-dog
+    url: 'https://opensource.ncsa.illinois.edu/confluence/questions/topics/41156618/brown-dog'
     email: browndog-support@ncsa.illinois.edu
   license:
     name: University of Illinois/NCSA Open Source License
@@ -40,12 +39,7 @@ paths:
   /keys:
     post:
       summary: Create a new api key.
-      description: >-
-        Create a new API key. Keys never expire and have to manually be deleted.
-        This method requires a valid Brown Dog username/password. You can
-        request one [here](https://browndog.ncsa.illinois.edu/signup/). Once you
-        a have key you can keep reusing it to create access tokens. Access
-        tokens are required for most endpoints.
+      description: 'Create a new API key. Keys never expire and have to manually be deleted. This method requires a valid Brown Dog username/password. You can request one [here](https://browndog.ncsa.illinois.edu/signup/). Once you a have key you can keep reusing it to create access tokens. Access tokens are required for most endpoints.'
       tags:
         - Authorization
       security:
@@ -66,11 +60,7 @@ paths:
   '/keys/{key}/tokens':
     post:
       summary: Create a new access token from an API key.
-      description: >-
-        Most endpoints require an access token. API keys are unique and never
-        expire. A client can create as many access tokens as they need for each 
-        key. Tokens expire after 24 hours. After that a new token will have to 
-        be created. Each token is bound to the key used to created it.
+      description: Most endpoints require an access token. API keys are unique and never expire. A client can create as many access tokens as they need for each  key. Tokens expire after 24 hours. After that a new token will have to  be created. Each token is bound to the key used to created it.
       tags:
         - Authorization
       parameters:
@@ -118,9 +108,7 @@ paths:
   '/tokens/{token}':
     get:
       summary: Get info about token.
-      description: >-
-        Retrieves whether the token is still alive and what the remaining time
-        to live is.
+      description: Retrieves whether the token is still alive and what the remaining time to live is.
       tags:
         - Authorization
       parameters:
@@ -177,9 +165,7 @@ paths:
         - text/plain
       responses:
         '200':
-          description: >-
-            An list of available output file formats as plain text with new
-            lines delimiters.
+          description: An list of available output file formats as plain text with new lines delimiters.
           schema:
             type: string
         default:
@@ -189,9 +175,7 @@ paths:
   /conversions/inputs:
     get:
       summary: List all supported input formats.
-      description: >-
-        List all input formats that can be accepted. Limit the number of hops
-        allowed by setting chain parameter, e.g. ?chain=2
+      description: 'List all input formats that can be accepted. Limit the number of hops allowed by setting chain parameter, e.g. ?chain=2'
       tags:
         - Conversions
       security:
@@ -338,9 +322,8 @@ paths:
           type: string
         - name: application
           in: query
-          description: >
-            Specific software application to use for this conversion. For
-            example PEcAn.
+          description: |
+            Specific software application to use for this conversion. For example PEcAn.
           required: false
           type: string
       tags:
@@ -462,12 +445,9 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     post:
-      summary: >-
-        Convert the uploaded file to the requested output format using the
-        specified software
-      description: >
-        Convert the uploaded file to the requested output format using the
-        specified software
+      summary: Convert the uploaded file to the requested output format using the specified software
+      description: |
+        Convert the uploaded file to the requested output format using the specified software
       parameters:
         - name: software
           in: path
@@ -502,38 +482,84 @@ paths:
             $ref: '#/definitions/Error'
   '/conversions/software/{software}/{output_format}/{file_url}':
     get:
-        summary: Convert file using its URL and a specific software
-        description: |
-          Convert the specified file to the requested output format using the file's URL and a specific software as inputs
-        parameters:
-          - name: software
-            in: path
-            description: Software name. For example ImageMagick.
-            required: true
+      summary: Convert file using its URL and a specific software
+      description: |
+        Convert the specified file to the requested output format using the file's URL and a specific software as inputs
+      parameters:
+        - name: software
+          in: path
+          description: Software name. For example ImageMagick.
+          required: true
+          type: string
+        - name: output_format
+          in: path
+          description: Output format. For example jpg.
+          required: true
+          type: string
+        - name: file_url
+          in: path
+          description: Encoded URL of the file that needs to be converted.
+          required: true
+          type: string
+      produces:
+        - text/plain
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: Link to converted file
+          schema:
             type: string
-          - name: output_format
-            in: path
-            description: Output format. For example jpg.
-            required: true
-            type: string
-          - name: file_url
-            in: path
-            description: Encoded URL of the file that needs to be converted.
-            required: true
-            type: string
-        produces:
-          - text/plain
-        tags:
-          - Conversions
-        responses:
-          '200':
-            description: Link to converted file
-            schema:
-              type: string
-          default:
-            description: Unexpected error
-            schema:
-              $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/file/{file_id}':
+    get:
+      summary: Retrieve the results of a file conversion.
+      description: |
+        Retrieve a file that was generated by a converter.
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from the conversion process
+          required: true
+          type: string
+      security:
+        - TokenHeader: []
+        - TokenQueryParam: []
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: File content
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/conversions/file/{file_id}/log':
+    get:
+      summary: Retrieve the log of a file conversion.
+      description: |
+        Retrieve the log details of a file conversion.
+      parameters:
+        - name: file_id
+          in: path
+          description: File id returned from the conversion process
+          required: true
+          type: string
+      security:
+        - TokenHeader: []
+        - TokenQueryParam: []
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: Log file content
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   /conversions/servers:
     get:
       summary: List all currently available Software Servers
@@ -550,30 +576,6 @@ paths:
             type: array
             items:
               type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /conversions/file/{file_id}:
-    get:
-      summary: Retrieve the results of a file conversion
-      description: |
-        Retrieve a file that was generated by a converter.
-      produces:
-        - file
-      parameters:
-        - name: file_id
-          in: path
-          required: true
-          type: string
-      security:
-        - TokenHeader: []
-        - TokenQueryParam: []
-      tags:
-        - Conversions
-      responses:
-        '200':
-          description: File content
         default:
           description: Unexpected error
           schema:
@@ -640,9 +642,8 @@ paths:
   '/extractions/files/{file_id}':
     get:
       summary: Retrieve basic file information.
-      description: >
-        Retrieve basic file information, including whether the file is ready for
-        submission to extractors.
+      description: |
+        Retrieve basic file information, including whether the file is ready for submission to extractors.
       parameters:
         - name: file_id
           in: path
@@ -796,12 +797,9 @@ paths:
             $ref: '#/definitions/Error'
   /extractors:
     get:
-      summary: >-
-        List all extractors that would be executed for the given file type
-        specified in the parameters, e.g. ?file_type=image/jpeg
-      description: >
-        List all extractors that would be executed for the given file type
-        specified in the parameters, e.g. ?filey_type-image/jpeg
+      summary: 'List all extractors that would be executed for the given file type specified in the parameters, e.g. ?file_type=image/jpeg'
+      description: |
+        List all extractors that would be executed for the given file type specified in the parameters, e.g. ?filey_type-image/jpeg
       tags:
         - Extractions
       parameters:
@@ -839,7 +837,7 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
-  /extractors/details/{extractor_name}:
+  '/extractors/details/{extractor_name}':
     get:
       summary: Get details about a specific extractor.
       description: |
@@ -966,12 +964,8 @@ paths:
   /dap/inputs:
     get:
       deprecated: true
-      summary: >-
-        List all input formats that can be accepted. Limit the number of hops
-        allowed by setting chain parameter, e.g. ?chain=2
-      description: >-
-        List all input formats that can be accepted. Limit the number of hops
-        allowed by setting chain parameter, e.g. ?chain=2
+      summary: 'List all input formats that can be accepted. Limit the number of hops allowed by setting chain parameter, e.g. ?chain=2'
+      description: 'List all input formats that can be accepted. Limit the number of hops allowed by setting chain parameter, e.g. ?chain=2'
       tags:
         - Conversions
       security:
@@ -1235,12 +1229,9 @@ paths:
             $ref: '#/definitions/Error'
     post:
       deprecated: true
-      summary: >-
-        Convert the uploaded file to the requested output format using the
-        specified software
-      description: >
-        Convert the uploaded file to the requested output format using the
-        specified software
+      summary: Convert the uploaded file to the requested output format using the specified software
+      description: |
+        Convert the uploaded file to the requested output format using the specified software
       parameters:
         - name: software
           in: path
@@ -1268,12 +1259,9 @@ paths:
   '/dap/software/{software}/{output_format}/{file_url}':
     get:
       deprecated: true
-      summary: >-
-        Convert the specified file to the requested output format using the
-        specified software
-      description: >
-        Convert the specified file to the requested output format using the
-        specified software
+      summary: Convert the specified file to the requested output format using the specified software
+      description: |
+        Convert the specified file to the requested output format using the specified software
       parameters:
         - name: software
           in: path
@@ -1630,9 +1618,7 @@ paths:
   /events/latest:
     get:
       summary: Get latest n events (Requires ADMIN).
-      description: >-
-        Get latest n events, where n is specified as a query parameter. Requires
-        administrator privileges.
+      description: 'Get latest n events, where n is specified as a query parameter. Requires administrator privileges.'
       tags:
         - Admin
       security:
