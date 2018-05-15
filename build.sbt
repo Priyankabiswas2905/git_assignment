@@ -1,6 +1,6 @@
 name := """fence"""
 
-version := "0.3.1"
+version := "0.4.0"
 
 scalaVersion := "2.11.7"
 
