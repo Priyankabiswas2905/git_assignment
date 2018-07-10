@@ -12,7 +12,7 @@ import com.twitter.util.Future
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server.{log, statsReceiver}
 import edu.illinois.ncsa.fence.db.Mongodb
-import edu.illinois.ncsa.fence.util.{ExternalResources, GatewayHeaders, Services}
+import edu.illinois.ncsa.fence.util.{RequestUtils, ExternalResources, GatewayHeaders, Services}
 
 /**
   * Services to interact with Clowder. Clowder is a data managements system for research data. Fro more information see
@@ -68,6 +68,7 @@ object Clowder {
 
   /**
     * Extract metadata from file embedded in the body using Clowder.
+ *
     * @param path path forwarded on to Polyglot
     */
   def extractBytes(path: String): Service[Request, Response] = {
@@ -151,7 +152,7 @@ object Clowder {
       log.debug("[Endpoint] Extractors info")
       // return error response if query parameter is not provided
       if (!req.params.contains("file_type")) {
-        return Future.value(missingParam("file_type"))
+        return Future.value(RequestUtils.missingParam("file_type"))
       }
       val newPathWithParameters = path + Server.getURIParams(req)
       val eiReq = Request(req.method, newPathWithParameters)
@@ -187,17 +188,5 @@ object Clowder {
     val fileurl = json.findValue("fileurl").asText()
     log.debug("Extracted fileurl from body of request: " + fileurl)
     fileurl
-  }
-
-  /** Create a Bad Request response in cases where a query parameter is missing.
-    *
-    * @param param missing query parameter
-    * @return a Bad Request response with message
-    */
-  private def missingParam(param: String): Response = {
-    val error = Response(Version.Http11, Status.BadRequest)
-    error.setContentTypeJson()
-    error.setContentString(s"""{"status":"error", "message":"Parameter '$param' required"}""")
-    error
   }
 }

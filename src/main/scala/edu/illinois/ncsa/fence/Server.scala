@@ -198,6 +198,9 @@ object Server extends TwitterServer {
     case (Get | Options, Root / "conversions" / "servers") =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.polyglotCatchAll(Path("/servers/"))
 
+    case (Get | Options, Root / "conversions" / "queues" / "count") =>
+      cf andThen tokenFilter andThen quotas andThen RabbitMQ.getQueueCount("conversions")
+
     case (Get | Options, Root / "conversions" / fileType / path) =>
       cf andThen tokenFilter andThen quotas andThen Polyglot.convertURL(fileType, path)
 
@@ -258,6 +261,9 @@ object Server extends TwitterServer {
 
     case (Post, Root / "extractions" / "url") =>
       cf andThen tokenFilter andThen quotas andThen Clowder.extractURL("/api/extractions/upload_url")
+
+    case (Get | Options, Root / "extractions" / "queues" / "count") =>
+      cf andThen tokenFilter andThen quotas andThen RabbitMQ.getQueueCount("extractions")
 
     case (Get | Options, Root / "extractors" / "details") =>
       cf andThen tokenFilter andThen Clowder.clowderCatchAll(Path("/api/extractors"))

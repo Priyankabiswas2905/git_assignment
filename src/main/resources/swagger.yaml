@@ -580,6 +580,33 @@ paths:
           description: Unexpected error
           schema:
             $ref: '#/definitions/Error'
+  '/conversions/queues/count':
+    get:
+      summary: Get RabbitMQ queue details for a specific converter.
+      description: |
+        Get RabbitMQ queue details for a specific converter by providing the conversion software name as a query parameter. For e.g. ?software_name=ImageMagick. Please note that the query parameter value is case sensitive. If your conversion process involves multiple steps that use different conversion software, then you will need to call this endpoint for each of those software to get a complete picture about the queue lengths for each of the step in the conversion process. Please use /conversions/path/{output_format}/{input_format} to get the conversion steps and the sofware used in each of those steps.
+      parameters:
+        - name: software_name
+          in: query
+          description: Conversion software name
+          required: true
+          type: string
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: A JSON object containing the number of messages and consumers (conversion software instances) in the requested converter RabbitMQ queue.
+          schema:
+            type: object
+            items:
+              type: string
+            example:
+              messages: 10
+              consumers: 3
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
   /extractions/url:
     post:
       summary: Uploads a file for extraction using the file's URL
@@ -791,6 +818,33 @@ paths:
             type: array
             items:
               type: string
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'
+  '/extractions/queues/count':
+    get:
+      summary: Get RabbitMQ queue details for a specific extractor.
+      description: |
+        Get RabbitMQ queue details for a specific extractor by providing the extractor name as a query parameter. For e.g. ?extractor_name=ncsa.image.preview.
+      parameters:
+        - name: extractor_name
+          in: query
+          description: Extractor name
+          required: true
+          type: string
+      tags:
+        - Extractions
+      responses:
+        '200':
+          description: A JSON object containing the number of messages and consumers (extractor instances) in the requested extractor RabbitMQ queue.
+          schema:
+            type: object
+            items:
+              type: string
+            example:
+              messages: 300
+              consumers: 10
         default:
           description: Unexpected error
           schema:
