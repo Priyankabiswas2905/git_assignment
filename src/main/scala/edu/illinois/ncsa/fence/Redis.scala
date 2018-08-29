@@ -3,7 +3,6 @@ package edu.illinois.ncsa.fence
 import _root_.java.lang.{Long => JLong}
 import java.util.{Calendar, UUID}
 
-import com.twitter.common.base.Command
 import com.twitter.conversions.time._
 import com.twitter.finagle.builder.ClientBuilder
 import com.twitter.finagle.redis.Client
@@ -14,9 +13,12 @@ import com.twitter.logging.Level
 import com.twitter.util.{Await, Future}
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server._
+import edu.illinois.ncsa.fence.db.ClowderMongodb.createAndGetApiKey
 import edu.illinois.ncsa.fence.models.{BytesStats, Stats}
+import edu.illinois.ncsa.fence.util.TwitterFutures
 import org.jboss.netty.buffer.ChannelBuffer
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
 /** Client to redis. */
@@ -26,6 +28,7 @@ object Redis {
 
   private val tokenNamespace = "token:"
   private val apiKeyNamespace = "key:"
+  private val clowderKeyNamespace = "clowder:"
   private val userNamespace = "user:"
   private val stats = "stats:"
   private val eventNamespace = "event:"
@@ -148,6 +151,30 @@ object Redis {
   /** Check that a key exists */
   def getAPIKeyFuture(apiKey: String): Future[Option[Buf]] = {
     redis.get(StringToBuf(apiKeyNamespace+apiKey))
+  }
+
+  /** get the user "browndog" key local */
+  def getClowderKeyFuture(userId: String): Future[Option[Buf]] = {
+    redis.get(StringToBuf(clowderKeyNamespace+userId))
+  }
+
+  /** get the user "browndog" key from clowder and save */
+  def addClowderKey(userId: String): Future[UUID] = {
+    // get clowder key from redis first, if none, then get from clowder mongo DB
+    getAPIKeyFuture(userId).flatMap { clowderbuf =>
+      clowderbuf match {
+
+        case Some(clowderBuf) => Future.value(UUID.fromString(BufToString(clowderBuf)))
+        case None => {
+          import TwitterFutures._
+          for(clowderKey <- createAndGetApiKey(userId).asTwitter) yield {
+            redis.set(StringToBuf(clowderKeyNamespace + userId), StringToBuf(clowderKey))
+            UUID.fromString(clowderKey)
+            UUID.randomUUID()
+          }
+          }
+        }
+      }
   }
 
   /** Increase a redis counter by key */

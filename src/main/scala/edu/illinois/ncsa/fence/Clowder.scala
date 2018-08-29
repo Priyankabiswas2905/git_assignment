@@ -8,11 +8,12 @@ import com.twitter.finagle.http.Method.Post
 import com.twitter.finagle.http.Version.Http11
 import com.twitter.finagle.http._
 import com.twitter.finagle.http.path.Path
+import com.twitter.finagle.redis.util.BufToString
 import com.twitter.util.Future
 import com.typesafe.config.ConfigFactory
 import edu.illinois.ncsa.fence.Server.{log, statsReceiver}
 import edu.illinois.ncsa.fence.db.Mongodb
-import edu.illinois.ncsa.fence.util.{RequestUtils, ExternalResources, GatewayHeaders, Services}
+import edu.illinois.ncsa.fence.util.{ExternalResources, GatewayHeaders, RequestUtils, Services}
 
 /**
   * Services to interact with Clowder. Clowder is a data managements system for research data. Fro more information see
@@ -74,32 +75,46 @@ object Clowder {
   def extractBytes(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Streaming clowder upload " + path)
     Service.mk { (req: Request) =>
-      val newPathWithParameters = Services.getServiceContextPath("dts") + path + Server.getURIParams(req)
-      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
-      req.headerMap.keys.foreach { key =>
-        req.headerMap.get(key).foreach { value =>
-          log.trace(s"Streaming upload header: $key -> $value")
-          newReq.headerMap.add(key, value)
+
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
+      Redis.getClowderKeyFuture(username) flatMap {
+        case Some(userkey) => {
+
+          val newPathWithParameters = Services.getServiceContextPath("dts") + path +
+            "?key=" + BufToString(userkey) + Server.getURIParams(req).replace("?", "&")
+          log.debug("[Endpoint] Streaming clowder upload " + newPathWithParameters)
+
+          val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
+          req.headerMap.keys.foreach { key =>
+            req.headerMap.get(key).foreach { value =>
+              log.trace(s"Streaming upload header: $key -> $value")
+              newReq.headerMap.add(key, value)
+            }
+          }
+          newReq.headerMap.set(Fields.Host, Services.getServiceHost("dts"))
+
+          val rep = clowder(newReq)
+          rep.flatMap { r =>
+            r.headerMap.remove(Fields.AccessControlAllowOrigin)
+            r.headerMap.remove(Fields.AccessControlAllowCredentials)
+            log.debug("Uploaded bytes for extraction " + req.getLength())
+            // log stats and events
+            val logKey = "extractions"
+            val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+            val id = extractId(r)
+            Mongodb.addEvent("extraction", "urn:bdid:" + id, username, clientIP, id)
+            Redis.logBytes(logKey, req.getLength())
+            Redis.increaseStat(logKey)
+            Future.value(r)
+          }
+          rep
+        }
+        case None => {
+          val errorResponse = Response(Version.Http11, Status.Forbidden)
+          errorResponse.contentString = "Invalid clowder Key, please try to get key."
+          Future(errorResponse)
         }
       }
-      newReq.headerMap.set(Fields.Host, Services.getServiceHost("dts"))
-      newReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dts"))
-      val rep = clowder(newReq)
-      rep.flatMap { r =>
-        r.headerMap.remove(Fields.AccessControlAllowOrigin)
-        r.headerMap.remove(Fields.AccessControlAllowCredentials)
-        log.debug("Uploaded bytes for extraction " +  req.getLength())
-        // log stats and events
-        val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
-        val logKey = "extractions"
-        val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-        val id = extractId(r)
-        Mongodb.addEvent("extraction", "urn:bdid:" + id, username, clientIP, id)
-        Redis.logBytes(logKey, req.getLength())
-        Redis.increaseStat(logKey)
-        Future.value(r)
-      }
-      rep
     }
   }
 
@@ -110,37 +125,47 @@ object Clowder {
   def extractURL(path: String): Service[Request, Response] = {
     log.debug("[Endpoint] Extract from url " + path)
     Service.mk { (req: Request) =>
-      val newPathWithParameters = Services.getServiceContextPath("dts") + path + Server.getURIParams(req)
-      val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
-      req.headerMap.keys.foreach { key =>
-        req.headerMap.get(key).foreach { value =>
-          log.trace(s"Streaming upload header: $key -> $value")
-          newReq.headerMap.add(key, value)
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
+      Redis.getClowderKeyFuture(username) flatMap {
+        case Some(userkey) => {
+          val newPathWithParameters = Services.getServiceContextPath("dts") + path +
+          "?key=" + BufToString(userkey) + Server.getURIParams(req).replace("?", "&")
+          val newReq = Request(Http11, Post, newPathWithParameters, req.reader)
+          req.headerMap.keys.foreach { key =>
+            req.headerMap.get(key).foreach { value =>
+              log.trace(s"Streaming upload header: $key -> $value")
+              newReq.headerMap.add(key, value)
+            }
+          }
+          newReq.headerMap.set(Fields.Host, Services.getServiceHost("dts"))
+          newReq.headerMap.set(Fields.ContentType, "application/json")
+          val rep = clowder(newReq)
+          rep.flatMap { r =>
+            r.headerMap.remove(Fields.AccessControlAllowOrigin)
+            r.headerMap.remove(Fields.AccessControlAllowCredentials)
+            log.debug(s"Uploaded $req.getLength() bytes for extraction ")
+            // log stats and events
+            val logKey = "extractions"
+            val fileurl = Clowder.extractFileURL(req)
+            ExternalResources.contentLengthFromHead(fileurl, logKey)
+            val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
+            val id = extractId(r)
+            Mongodb.addEvent("extraction", fileurl, username, clientIP, id)
+            Redis.logBytes(logKey, req.getLength())
+            Redis.increaseStat(logKey)
+            Future.value(r)
+          }
+          rep
+        }
+          case None => {
+            val errorResponse = Response(Version.Http11, Status.Forbidden)
+            errorResponse.contentString = "Invalid clowder Key, please try to get key."
+            Future(errorResponse)
+          }
         }
       }
-      newReq.headerMap.set(Fields.Host, Services.getServiceHost("dts"))
-      newReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dts"))
-      newReq.headerMap.set(Fields.ContentType, "application/json")
-      val rep = clowder(newReq)
-      rep.flatMap { r =>
-        r.headerMap.remove(Fields.AccessControlAllowOrigin)
-        r.headerMap.remove(Fields.AccessControlAllowCredentials)
-        log.debug(s"Uploaded $req.getLength() bytes for extraction ")
-        // log stats and events
-        val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
-        val logKey = "extractions"
-        val fileurl = Clowder.extractFileURL(req)
-        ExternalResources.contentLengthFromHead(fileurl, logKey)
-        val clientIP = req.headerMap.getOrElse[String]("X-Real-IP", req.remoteSocketAddress.toString)
-        val id = extractId(r)
-        Mongodb.addEvent("extraction", fileurl, username, clientIP, id)
-        Redis.logBytes(logKey, req.getLength())
-        Redis.increaseStat(logKey)
-        Future.value(r)
-      }
-      rep
     }
-  }
+
 
   /**
     * Proxy to Extractors Info service.

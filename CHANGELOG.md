@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## Added
  - Endpoints to get RabbitMQ queue details about messages and consumers for extractions and conversions. 
  [BD-2184](https://opensource.ncsa.illinois.edu/jira/browse/BD-2184)
+- Fence post clowderkey to clowder for extraction.
+ [BD-2228](https://opensource.ncsa.illinois.edu/jira/browse/BD-2228)
 
 ## 0.4.0 - 2018-05-15
 
