@@ -10,8 +10,8 @@ info:
   license:
     name: University of Illinois/NCSA Open Source License
     url: 'https://opensource.org/licenses/NCSA'
-  version: 0.2.1
-host: bd-api-dev.ncsa.illinois.edu
+  version: 0.5.0
+host: bd-api.ncsa.illinois.edu
 basePath: /v1
 schemes:
   - https
