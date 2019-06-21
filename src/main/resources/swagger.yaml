@@ -545,7 +545,7 @@ paths:
       parameters:
         - name: file_id
           in: path
-          description: File id returned from the conversion process
+          description: File id returned from the conversion process.
           required: true
           type: string
       security:
@@ -925,42 +925,6 @@ paths:
       responses:
         '200':
           description: An array of extractor ids
-          schema:
-            type: array
-            items:
-              type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /extractors/running/servers:
-    get:
-      summary: Lists servers hosting running extractors (Requires ADMIN).
-      description: |
-        Lists servers hosting running extractors. Requires administrator privileges.
-      tags:
-        - Extractions
-      responses:
-        '200':
-          description: An array of server IPs
-          schema:
-            type: array
-            items:
-              type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /extractors/instances:
-    get:
-      summary: Lists the details of the currently running extractors (Requires ADMIN).
-      description: |
-        Lists the details of the currently running extractors. Requires administrator privileges.
-      tags:
-        - Extractions
-      responses:
-        '200':
-          description: An array of extractor details
           schema:
             type: array
             items:
@@ -1600,42 +1564,6 @@ paths:
       responses:
         '200':
           description: An array of extractor ids.
-          schema:
-            type: array
-            items:
-              type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /dts/api/extractions/extractors_details:
-    get:
-      deprecated: true
-      summary: Lists the details of the currently running extractors.
-      description: Lists the details of the currently running extractors.
-      tags:
-        - Extractions
-      responses:
-        '200':
-          description: An array of extractor details.
-          schema:
-            type: array
-            items:
-              type: string
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /dts/api/extractions/servers_ips:
-    get:
-      deprecated: true
-      summary: Lists servers hosting running extractors.
-      description: Lists servers hosting running extractors.
-      tags:
-        - Extractions
-      responses:
-        '200':
-          description: An array of server IPs
           schema:
             type: array
             items:
