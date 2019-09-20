@@ -95,6 +95,7 @@ object Auth {
         case Some(cred) =>
           val apiKey = Redis.createApiKey(cred.username)
           Redis.increaseStat("keys")
+          Redis.addClowderKey(cred.username)
           val res = Response(req.version, Status.Ok)
           res.contentType = "application/json;charset=UTF-8"
           res.content = Buf.Utf8(JsonConverter.writeToString(Map("api-key"->apiKey)))
