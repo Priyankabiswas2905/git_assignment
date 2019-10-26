@@ -35,12 +35,17 @@ object ClowderMongodb {
     ) yield {
       if(!optionUser.isDefined) {
         log.debug("create user in clowder")
-        val email = userId + "@illinois.edu"
         // create clowder with inentityId, other fields will be override when user login clowder with LDAP.
         val userDocument =
           Document(
             "status" -> "Active",
-            "identityId" -> Document("_typeHint" -> "securesocial.core.IdentityId", "userId" -> userId, "providerId" -> "ldap")
+            "_typeHint" -> "models.ClowderUser",
+            "firstName" -> "",
+            "lastName" -> "",
+            "fullName" -> "",
+            "authMethod" -> Document("_typeHint" -> "securesocial.core.AuthenticationMethod", "method" -> "ldap"),
+            "identityId" -> Document("_typeHint" -> "securesocial.core.IdentityId", "userId" -> userId, "providerId" -> "ldap"),
+            "termsOfServices" -> Document("accepted" -> true, "acceptedDate" -> new Date, "acceptedVersion" -> "2016-06-06")
           )
         users.insertOne(userDocument).toFuture()
           .recoverWith { case e: Throwable => { log.error("Add clowder user", e); Future.failed(e) } }
