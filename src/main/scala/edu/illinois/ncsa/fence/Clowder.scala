@@ -46,25 +46,34 @@ object Clowder {
   def clowderCatchAll(path: Path) = new Service[Request, Response] {
     def apply(req: Request): Future[Response] = {
       log.debug("[Endpoint] Clowder catch all")
-      clowderStats.incr()
-      val newPathWithParameters = Services.getServiceContextPath("dts") + path + Server.getURIParams(req)
-      val dtsReq = Request(req.method, newPathWithParameters)
-      req.headerMap.keys.foreach { key =>
-        req.headerMap.get(key).foreach { value =>
-          log.trace(s"Streaming upload header: $key -> $value")
-          dtsReq.headerMap.add(key, value)
+
+      val username = req.headerMap.getOrElse(GatewayHeaders.usernameHeader, "noUserFoundInHeader")
+      Redis.getClowderKeyFuture(username) flatMap {
+        case Some(userkey) => {
+          clowderStats.incr()
+          val newPathWithParameters = Services.getServiceContextPath("dts") + path +
+            "?key=" + BufToString(userkey) + Server.getURIParams(req).replace("?", "&")
+          val dtsReq = Request(req.method, newPathWithParameters)
+          req.headerMap.keys.foreach { key =>
+            req.headerMap.get(key).foreach { value =>
+              log.trace(s"Streaming upload header: $key -> $value")
+              dtsReq.headerMap.add(key, value)
+            }
+          }
+          log.debug("Clowder " + dtsReq)
+          val rep = clowder(dtsReq)
+          rep.flatMap { r =>
+            r.headerMap.remove(Fields.AccessControlAllowOrigin)
+            r.headerMap.remove(Fields.AccessControlAllowCredentials)
+            Future.value(r)
+          }
+          rep
         }
-      }
-      dtsReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dts"))
-      log.debug("Clowder " + dtsReq)
-      val rep = clowder(dtsReq)
-      rep.flatMap { r =>
-        r.headerMap.remove(Fields.AccessControlAllowOrigin)
-        r.headerMap.remove(Fields.AccessControlAllowCredentials)
-        Future.value(r)
-      }
-      rep
-    }
+        case None => {
+          val errorResponse = Response(Version.Http11, Status.Forbidden)
+          errorResponse.contentString = "Invalid clowder Key, please try to get key."
+          Future(errorResponse)
+        }
   }
 
   /**
