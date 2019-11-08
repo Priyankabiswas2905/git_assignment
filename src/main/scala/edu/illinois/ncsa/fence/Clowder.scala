@@ -56,17 +56,18 @@ object Clowder {
           val dtsReq = Request(req.method, newPathWithParameters)
           req.headerMap.keys.foreach { key =>
             req.headerMap.get(key).foreach { value =>
-              log.trace(s"Streaming upload header: $key -> $value")
+              log.debug(s"Streaming upload header: $key -> $value")
               dtsReq.headerMap.add(key, value)
             }
           }
-          log.debug("Clowder " + dtsReq)
+          log.debug("Clowder Request " + dtsReq)
           val rep = clowder(dtsReq)
           rep.flatMap { r =>
             r.headerMap.remove(Fields.AccessControlAllowOrigin)
             r.headerMap.remove(Fields.AccessControlAllowCredentials)
             Future.value(r)
           }
+          log.debug("Clowder Response" + rep)
           rep
         }
         case None => {
