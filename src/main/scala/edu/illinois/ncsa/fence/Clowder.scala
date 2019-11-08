@@ -56,7 +56,7 @@ object Clowder {
         }
       }
       dtsReq.headerMap.set(Fields.Authorization, Services.getServiceBasicAuth("dts"))
-      log.debug("Clowder " + req)
+      log.debug("Clowder " + dtsReq)
       val rep = clowder(dtsReq)
       rep.flatMap { r =>
         r.headerMap.remove(Fields.AccessControlAllowOrigin)
