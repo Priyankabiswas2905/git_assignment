@@ -74,6 +74,8 @@ object Clowder {
           errorResponse.contentString = "Invalid clowder Key, please try to get key."
           Future(errorResponse)
         }
+      }
+    }
   }
 
   /**
