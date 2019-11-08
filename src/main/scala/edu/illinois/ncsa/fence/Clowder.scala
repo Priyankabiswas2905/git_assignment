@@ -65,9 +65,9 @@ object Clowder {
           rep.flatMap { r =>
             r.headerMap.remove(Fields.AccessControlAllowOrigin)
             r.headerMap.remove(Fields.AccessControlAllowCredentials)
+            log.debug("Clowder Response" + r)
             Future.value(r)
           }
-          log.debug("Clowder Response" + rep)
           rep
         }
         case None => {
